@@ -38,6 +38,7 @@ app/src/main/java/tw/hoonsor/voicehub/
 ├─ agent/                 AgentModels（協定）、BuiltinCatalog（內建動作規格）、BuiltinActions（Intent 執行）、
 │                         ToolRegistry（探索其他 APP＋分派）、Orchestrator（一句話的完整流程）、
 │                         OfflineParser／AppMatcher（離線句型與 APP 名稱比對，純邏輯）、AgentProvider（本 APP 的 Agent API）
+├─ (tw/hoonsor/agent/HoonsorAgent.kt)  共用提供者 SDK：各 APP 整份複製使用，本 APP 的 AgentProvider 也用它
 ├─ dispatch/              語音派工：DispatchTrigger（觸發詞）、DispatchClient（HTTP）、DispatchQueue（離線暫存）、DispatchService
 ├─ data/                  Settings、KeyVault
 └─ ui/                    MainActivity（動作／測試台／健康檢查／設定）、Screens、Common、Icons（手繪向量）、theme（唯一色票）
@@ -50,6 +51,12 @@ app/src/main/java/tw/hoonsor/voicehub/
 4. 依序執行 calls；`NEEDS_CONFIRMATION` 先問、`NEEDS_UI` 開畫面、`AMBIGUOUS` 請倬選、失敗就停
 5. 全部成功且是簡單動作 → 直接用各動作 summary 回覆（省一次 AI 呼叫）；有失敗或要解讀查詢資料 → 再給 AI 一輪
 6. 有跳到其他 APP（`data.leavesApp`）→ 唸完後自動收起對話視窗
+
+## Agent API 協定的唯一來源
+- `docs/AGENT_PROTOCOL.md`：協定、SDK 用法、撰寫指南、**相容規則**。其他 APP 與 SOP 技能都引用這裡，改協定只改這裡
+- `app/src/main/java/tw/hoonsor/agent/HoonsorAgent.kt`：提供者 SDK 的來源，改了要遞增 `SDK_VERSION`，再複製到各 APP
+- `tools/agent_compat_check.py`：破壞性變更檢查（CI 會跑；各 APP 複製使用）。測試：`python -m unittest discover -s tools`
+- 其他 APP 改版不需要通知本專案；只有協定升版、需要大腦特別處理、新增 data 約定時才要改這裡
 
 ## 關鍵設計決策（＋原因）
 - **不用各家 tool calling，改要求固定 JSON**：MiniMax／Groq 相容程度不一，換模型不用改程式

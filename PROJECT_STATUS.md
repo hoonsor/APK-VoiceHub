@@ -15,7 +15,9 @@
 - [x] 語音派工（dispatch_send、dispatch_status、離線暫存補送）
 - [x] 設定、健康檢查、API 測試台
 - [x] 單元測試（離線句型、APP 比對、規劃解析、VAD、派工觸發與回應、manifest 一致性）
-- [ ] 建立 GitHub repo、加入共用簽章 Secrets、發佈 latest
+- [x] 建立 GitHub repo（public）、CI 發佈 latest（目前 debug 簽章）
+- [ ] 把 hoonsor/APK-VoiceHub 加進 setup-hoonsor-signing.ps1 的 $Repos 並執行（之後 latest 才是共用簽章）
+- [x] 協定唯一來源 AGENT_PROTOCOL.md、共用 SDK HoonsorAgent.kt、CI 相容檢查、deprecated 支援
 - [ ] 實機驗證（見下方清單）
 - [ ] Claude Design 版面方案比較（SOP 第 3 階段，事後補）
 - [ ] 備份四件套（F23）
@@ -54,6 +56,11 @@
 5. Claude Design 補版面方案比較，更新 DESIGN.md
 
 ## 交接紀錄
+### 2026-10-17（續）／電腦 A
+- 完成：建立 public repo、CI 綠燈並發佈 latest；依倬同意修改規則：新增 docs/AGENT_PROTOCOL.md（唯一來源）、共用 SDK、相容檢查工具與測試、deprecated 欄位；SOP 技能 v1.1.0 原始檔與上傳 zip 放在 36 號專案 skills/；AI-PROFILE v0.4.2
+- 決定＋原因：APP 改版不通知大腦，改用相容規則＋CI 自動檢查（大腦每次即時讀 describe，不寫死動作）；協定只寫一份避免不一致
+- 未完成：倬要到 claude.ai 上傳技能 zip、把 36 號專案 claude-project-updates/2026-10-17-語音相容規則.md 的內容貼進 Project 文件；共用簽章 Secrets；AI-PROFILE 同步腳本未正式執行（會整份覆寫全域規則檔，待倬確認）
+
 ### 2026-10-17／電腦 A
 - 完成：v0.1.0 全部程式、單元測試、模擬器驗證、文件、CI workflow；中途依倬指示加入語音派工
 - 決定＋原因：

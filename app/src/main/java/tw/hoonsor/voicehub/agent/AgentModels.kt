@@ -23,6 +23,8 @@ data class ActionSpec(
     val risk: Risk,
     val params: JSONObject,
     val examples: List<String>,
+    /** 已停用：仍可執行（相容舊呼叫），但不再給 AI 看 */
+    val deprecated: Boolean = false,
 ) {
     fun toJson(): JSONObject = JSONObject()
         .put("name", name)
@@ -31,6 +33,7 @@ data class ActionSpec(
         .put("risk", risk.wire)
         .put("params", params)
         .put("examples", JSONArray(examples))
+        .apply { if (deprecated) put("deprecated", true) }
 
     companion object {
         fun fromJson(j: JSONObject) = ActionSpec(
@@ -40,6 +43,7 @@ data class ActionSpec(
             risk = Risk.of(j.optString("risk")),
             params = j.optJSONObject("params") ?: JSONObject().put("type", "object"),
             examples = j.optJSONArray("examples")?.let { a -> (0 until a.length()).map { a.optString(it) } } ?: emptyList(),
+            deprecated = j.optBoolean("deprecated", false),
         )
     }
 }

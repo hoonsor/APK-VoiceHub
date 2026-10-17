@@ -36,7 +36,7 @@ object Planner {
             ordered.forEach { c ->
                 append("### ").append(c.app).append("（target: ").append(c.packageName).append("）\n")
                 if (c.description.isNotBlank()) append(c.description).append('\n')
-                c.actions.forEach { a ->
+                c.actions.filterNot { it.deprecated }.forEach { a ->
                     append("- ").append(a.name).append(" [").append(a.risk.wire).append("] ").append(a.title)
                     if (a.description.isNotBlank()) append("：").append(a.description)
                     append("\n  params: ").append(compactSchema(a.params))

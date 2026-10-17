@@ -1,34 +1,23 @@
 package tw.hoonsor.voicehub.agent
 
-import android.content.ContentProvider
-import android.content.ContentValues
-import android.database.Cursor
-import android.net.Uri
-import android.os.Bundle
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
 import org.json.JSONArray
 import org.json.JSONObject
+import tw.hoonsor.agent.AgentRequest
+import tw.hoonsor.agent.HoonsorAgent
+import tw.hoonsor.agent.HoonsorAgentProvider
 import tw.hoonsor.voicehub.Graph
 
 /**
  * 本 APP 自己的 Agent API：把內建系統動作開放給其他 APP（例如未來的電腦端大腦）。
- * 只解析與分派；實際動作一律走 [BuiltinActions]。
+ * 用共用 SDK（tw.hoonsor.agent）實作，順便當作 SDK 的實際使用範例。
  */
-class AgentProvider : ContentProvider() {
-    override fun onCreate() = true
+class AgentProvider : HoonsorAgentProvider() {
 
-    override fun call(method: String, arg: String?, extras: Bundle?): Bundle {
-        val out = when (method) {
-            AgentApi.METHOD_DESCRIBE -> Graph.registry.builtinCatalog.toDescribeJson()
-            AgentApi.METHOD_HEALTH -> health()
-            AgentApi.METHOD_EXECUTE -> execute(extras?.getString(AgentApi.EXTRA_JSON))
-            else -> AgentResult.fail(AgentApi.NOT_FOUND, "不支援的方法：$method").toJson("")
-        }
-        return Bundle().apply { putString(AgentApi.EXTRA_JSON, out.toString()) }
-    }
+    override fun describe(): JSONObject = Graph.registry.builtinCatalog.toDescribeJson()
 
-    private fun health(): JSONObject {
+    override fun health(): JSONObject {
         val issues = JSONArray()
         val s = Graph.settings
         if (!s.hasLlm && !s.hasGroq) issues.put("尚未設定 AI 的 API key")
@@ -36,28 +25,18 @@ class AgentProvider : ContentProvider() {
         return JSONObject().put("ok", issues.length() == 0).put("issues", issues)
     }
 
-    private fun execute(raw: String?): JSONObject {
-        val req = runCatching { JSONObject(raw ?: "") }.getOrNull()
-            ?: return AgentResult.fail(AgentApi.INVALID_PARAMS, "缺少 json").toJson("")
-        val id = req.optString("requestId")
-        val action = req.optString("action")
-        val params = req.optJSONObject("params") ?: JSONObject()
-        val dryRun = req.optBoolean("dryRun", false)
-        // 在 Binder 執行緒等結果：一般動作 registry 會切到主執行緒做；派工要連網，最多等 30 秒
+    /** 派工要連網，給 30 秒；其他動作照預設 5 秒 */
+    override fun timeoutMs(action: String): Long =
+        if (action in BuiltinCatalog.DISPATCH_ACTIONS) 30_000L else HoonsorAgent.DEFAULT_TIMEOUT_MS
+
+    override fun execute(request: AgentRequest): JSONObject {
         val reg = Graph.registry
-        val limit = if (action in BuiltinCatalog.DISPATCH_ACTIONS) 30_000L else AgentApi.TIMEOUT_MS
+        // registry 會把需要主執行緒的動作切過去；這裡在 SDK 的背景執行緒等結果
         val result = runBlocking {
-            withTimeoutOrNull(limit) {
-                runCatching { reg.execute(reg.selfPackage, action, params, dryRun, req.optString("confirmToken").ifBlank { null }, req.optString("utterance").ifBlank { null }) }
-                    .getOrElse { AgentResult.fail(AgentApi.INTERNAL, it.message ?: "錯誤") }
+            withTimeoutOrNull(timeoutMs(request.action)) {
+                reg.execute(reg.selfPackage, request.action, request.params, request.dryRun, request.confirmToken, request.utterance)
             }
         } ?: AgentResult.fail(AgentApi.INTERNAL, "逾時")
-        return result.toJson(id)
+        return result.toJson(request.requestId)
     }
-
-    override fun query(uri: Uri, projection: Array<out String>?, selection: String?, selectionArgs: Array<out String>?, sortOrder: String?): Cursor? = null
-    override fun getType(uri: Uri): String? = null
-    override fun insert(uri: Uri, values: ContentValues?): Uri? = null
-    override fun delete(uri: Uri, selection: String?, selectionArgs: Array<out String>?) = 0
-    override fun update(uri: Uri, values: ContentValues?, selection: String?, selectionArgs: Array<out String>?) = 0
 }

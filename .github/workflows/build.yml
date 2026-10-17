@@ -15,6 +15,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0   # 相容檢查要讀最近一個 v* tag
+
+      # Agent API 破壞性變更檢查：與最近一個正式版的 docs/agent-manifest.json 比對
+      - name: Agent API compatibility
+        run: |
+          python3 -m unittest discover -s tools
+          python3 tools/agent_compat_check.py --git-baseline docs/agent-manifest.json
 
       - uses: actions/setup-java@v5
         with:

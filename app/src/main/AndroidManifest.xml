@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Hoonsor Agent API v1：所有倬的 APP 用同一把簽章宣告同一個權限。
+         大腦本身也宣告，避免「先裝大腦、後裝其他 APP」時拿不到權限。 -->
+    <permission
+        android:name="tw.hoonsor.permission.AGENT"
+        android:label="Hoonsor Agent"
+        android:protectionLevel="signature" />
+    <uses-permission android:name="tw.hoonsor.permission.AGENT" />
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.SET_ALARM" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+
+    <queries>
+        <!-- 找出其他實作 Agent API 的 APP -->
+        <intent>
+            <action android:name="tw.hoonsor.agent.PROVIDER" />
+        </intent>
+        <!-- 開啟任一已安裝的 APP -->
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+    </queries>
+
+    <application
+        android:name=".App"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.VoiceHub">
+
+        <!-- 對話畫面：桌面圖示、長按電源鍵（ACTION_ASSIST）、快速設定磚都進這裡 -->
+        <activity
+            android:name=".assistant.AssistantActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTask"
+            android:taskAffinity="tw.hoonsor.voicehub.assistant"
+            android:theme="@style/Theme.VoiceHub.Overlay"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.ASSIST" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VOICE_COMMAND" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- 設定、健康檢查、API 測試台 -->
+        <activity
+            android:name=".ui.MainActivity"
+            android:exported="true"
+            android:label="@string/settings_label" />
+
+        <!-- 系統「預設數位助理」：長按電源鍵或手勢時由系統呼叫 -->
+        <service
+            android:name=".assistant.VoiceService"
+            android:exported="true"
+            android:permission="android.permission.BIND_VOICE_INTERACTION">
+            <meta-data
+                android:name="android.voice_interaction"
+                android:resource="@xml/voice_interaction_service" />
+            <intent-filter>
+                <action android:name="android.service.voice.VoiceInteractionService" />
+            </intent-filter>
+        </service>
+        <service
+            android:name=".assistant.VoiceSessionService"
+            android:exported="true"
+            android:permission="android.permission.BIND_VOICE_INTERACTION" />
+        <!-- 系統要求數位助理必須附一個 RecognitionService；這裡只是佔位 -->
+        <service
+            android:name=".assistant.StubRecognitionService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.speech.RecognitionService" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <meta-data
+                android:name="android.speech"
+                android:resource="@xml/recognition_service" />
+        </service>
+
+        <!-- 快速設定磚 -->
+        <service
+            android:name=".assistant.AssistTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_tile"
+            android:label="@string/tile_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
+                android:value="false" />
+        </service>
+
+        <!-- 本 APP 自己的 Agent API（內建系統動作），其他 APP 也能呼叫 -->
+        <provider
+            android:name=".agent.AgentProvider"
+            android:authorities="${applicationId}.agent"
+            android:exported="true"
+            android:permission="tw.hoonsor.permission.AGENT">
+            <intent-filter>
+                <action android:name="tw.hoonsor.agent.PROVIDER" />
+            </intent-filter>
+        </provider>
+    </application>
+</manifest>

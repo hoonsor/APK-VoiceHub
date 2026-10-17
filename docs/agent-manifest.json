@@ -1,0 +1,425 @@
+{
+  "app": "系統（語音總控內建）",
+  "package": "tw.hoonsor.voicehub",
+  "description": "用 Android 標準方式操作手機：開啟 APP、鬧鐘與計時器、撥號、簡訊草稿、導航、搜尋、手電筒、音量、媒體播放、系統設定頁；以及把開發需求語音派工給利姆路。",
+  "api": 1,
+  "actions": [
+    {
+      "examples": [
+        "我手機有哪些 APP",
+        "有沒有裝 LINE"
+      ],
+      "name": "app_list",
+      "description": "列出手機上可開啟的 APP 名稱，可用關鍵字篩選。",
+      "risk": "read",
+      "title": "列出 APP",
+      "params": {
+        "type": "object",
+        "properties": {"query": {
+          "description": "名稱關鍵字，可省略",
+          "type": "string"
+        }},
+        "required": []
+      }
+    },
+    {
+      "examples": [
+        "打開 LINE",
+        "開相機",
+        "幫我開 YouTube"
+      ],
+      "name": "app_open",
+      "description": "依名稱開啟手機上的任一 APP（名稱可模糊比對）。",
+      "risk": "reversible",
+      "title": "開啟 APP",
+      "params": {
+        "type": "object",
+        "properties": {"name": {
+          "description": "APP 名稱，例如 LINE、相機、YouTube",
+          "type": "string"
+        }},
+        "required": ["name"]
+      }
+    },
+    {
+      "examples": [
+        "明天早上七點叫我",
+        "設一個六點半的鬧鐘叫運動",
+        "平日早上七點十分的鬧鐘"
+      ],
+      "name": "alarm_set",
+      "description": "用系統時鐘 APP 新增鬧鐘，不跳畫面。",
+      "risk": "reversible",
+      "title": "設定鬧鐘（系統時鐘）",
+      "params": {
+        "type": "object",
+        "properties": {
+          "hour": {
+            "description": "時（0-23）",
+            "maximum": 23,
+            "type": "integer",
+            "minimum": 0
+          },
+          "days": {
+            "description": "重複的星期，1=週一\u20267=週日；省略表示只響一次",
+            "type": "array",
+            "items": {"type": "integer"}
+          },
+          "label": {
+            "description": "鬧鐘名稱，可省略",
+            "type": "string"
+          },
+          "minute": {
+            "description": "分（0-59）",
+            "maximum": 59,
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "hour",
+          "minute"
+        ]
+      }
+    },
+    {
+      "examples": [
+        "計時五分鐘",
+        "三分鐘後提醒我泡麵好了"
+      ],
+      "name": "timer_set",
+      "description": "用系統時鐘 APP 開始倒數計時，不跳畫面。",
+      "risk": "reversible",
+      "title": "設定計時器（系統時鐘）",
+      "params": {
+        "type": "object",
+        "properties": {
+          "seconds": {
+            "description": "倒數秒數",
+            "maximum": 86400,
+            "type": "integer",
+            "minimum": 1
+          },
+          "label": {
+            "description": "計時器名稱，可省略",
+            "type": "string"
+          }
+        },
+        "required": ["seconds"]
+      }
+    },
+    {
+      "examples": [
+        "打電話給媽媽",
+        "撥 0912345678"
+      ],
+      "name": "phone_dial",
+      "description": "打開撥號畫面並帶入號碼（由使用者按下撥出）。可給號碼或聯絡人名稱。",
+      "risk": "reversible",
+      "title": "撥號",
+      "params": {
+        "type": "object",
+        "properties": {
+          "number": {
+            "description": "電話號碼",
+            "type": "string"
+          },
+          "contact": {
+            "description": "聯絡人名稱（需聯絡人權限）",
+            "type": "string"
+          }
+        },
+        "required": []
+      }
+    },
+    {
+      "examples": ["傳簡訊跟老婆說我晚點到"],
+      "name": "sms_draft",
+      "description": "打開簡訊 APP 並填好收件人與內容（由使用者按下傳送）。",
+      "risk": "reversible",
+      "title": "簡訊草稿",
+      "params": {
+        "type": "object",
+        "properties": {
+          "to": {
+            "description": "電話號碼或聯絡人名稱",
+            "type": "string"
+          },
+          "body": {
+            "description": "簡訊內容",
+            "type": "string"
+          }
+        },
+        "required": ["body"]
+      }
+    },
+    {
+      "examples": [
+        "導航到台北車站",
+        "走路去最近的全聯"
+      ],
+      "name": "map_navigate",
+      "description": "用地圖 APP 導航到目的地。",
+      "risk": "reversible",
+      "title": "導航",
+      "params": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "description": "交通方式",
+            "type": "string",
+            "enum": [
+              "driving",
+              "walking",
+              "transit",
+              "bicycling"
+            ]
+          },
+          "destination": {
+            "description": "目的地名稱或地址",
+            "type": "string"
+          }
+        },
+        "required": ["destination"]
+      }
+    },
+    {
+      "examples": [
+        "搜尋今天的天氣",
+        "查一下 Kotlin 協程"
+      ],
+      "name": "web_search",
+      "description": "用瀏覽器搜尋關鍵字。",
+      "risk": "read",
+      "title": "網路搜尋",
+      "params": {
+        "type": "object",
+        "properties": {"query": {
+          "description": "搜尋字詞",
+          "type": "string"
+        }},
+        "required": ["query"]
+      }
+    },
+    {
+      "examples": ["打開 github.com"],
+      "name": "url_open",
+      "description": "用瀏覽器或對應 APP 開啟網址。",
+      "risk": "read",
+      "title": "開啟網址",
+      "params": {
+        "type": "object",
+        "properties": {"url": {
+          "description": "完整網址",
+          "type": "string"
+        }},
+        "required": ["url"]
+      }
+    },
+    {
+      "examples": [
+        "開手電筒",
+        "關掉手電筒"
+      ],
+      "name": "flashlight_set",
+      "description": "開或關手電筒。",
+      "risk": "reversible",
+      "title": "手電筒",
+      "params": {
+        "type": "object",
+        "properties": {"on": {
+          "description": "true＝開、false＝關",
+          "type": "boolean"
+        }},
+        "required": ["on"]
+      }
+    },
+    {
+      "examples": [
+        "媒體音量調到三十",
+        "鈴聲關靜音",
+        "鬧鐘音量開到最大"
+      ],
+      "name": "volume_set",
+      "description": "把指定音量調到百分比。",
+      "risk": "reversible",
+      "title": "調整音量",
+      "params": {
+        "type": "object",
+        "properties": {
+          "stream": {
+            "description": "音量類型",
+            "type": "string",
+            "enum": [
+              "media",
+              "ring",
+              "alarm",
+              "notification"
+            ]
+          },
+          "percent": {
+            "description": "0-100",
+            "maximum": 100,
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "stream",
+          "percent"
+        ]
+      }
+    },
+    {
+      "examples": [
+        "暫停音樂",
+        "下一首",
+        "繼續播放"
+      ],
+      "name": "media_control",
+      "description": "控制目前播放中的音樂或影片。",
+      "risk": "reversible",
+      "title": "媒體播放控制",
+      "params": {
+        "type": "object",
+        "properties": {"command": {
+          "description": "指令",
+          "type": "string",
+          "enum": [
+            "play",
+            "pause",
+            "toggle",
+            "next",
+            "previous"
+          ]
+        }},
+        "required": ["command"]
+      }
+    },
+    {
+      "examples": [
+        "打開藍牙設定",
+        "Wi-Fi 設定",
+        "我要改螢幕亮度"
+      ],
+      "name": "settings_open",
+      "description": "打開指定的系統設定頁。",
+      "risk": "read",
+      "title": "開啟系統設定",
+      "params": {
+        "type": "object",
+        "properties": {"page": {
+          "description": "設定頁",
+          "type": "string",
+          "enum": [
+            "main",
+            "wifi",
+            "bluetooth",
+            "display",
+            "sound",
+            "battery",
+            "location",
+            "apps",
+            "notifications",
+            "data",
+            "airplane",
+            "date"
+          ]
+        }},
+        "required": ["page"]
+      }
+    },
+    {
+      "examples": [
+        "下週三下午兩點開人事會議",
+        "明天整天請假"
+      ],
+      "name": "calendar_event_add",
+      "description": "打開行事曆的新增畫面並填好內容（由使用者按儲存）。",
+      "risk": "reversible",
+      "title": "新增行事曆活動",
+      "params": {
+        "type": "object",
+        "properties": {
+          "allDay": {
+            "description": "是否整天",
+            "type": "boolean"
+          },
+          "start": {
+            "description": "開始時間，ISO 格式 yyyy-MM-ddTHH:mm",
+            "type": "string"
+          },
+          "end": {
+            "description": "結束時間，ISO 格式，可省略（預設一小時）",
+            "type": "string"
+          },
+          "location": {
+            "description": "地點，可省略",
+            "type": "string"
+          },
+          "title": {
+            "description": "活動名稱",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "start"
+        ]
+      }
+    },
+    {
+      "examples": [
+        "還剩多少電",
+        "有在充電嗎"
+      ],
+      "name": "battery_status",
+      "description": "查詢電量與是否充電中。",
+      "risk": "read",
+      "title": "電池狀態",
+      "params": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "examples": [
+        "派工，幫鬧鐘 APP 加一個貪睡次數上限",
+        "我有個點子，做一個記帳工具可以拍收據",
+        "叫利姆路把 27 號專案跑一下收工"
+      ],
+      "name": "dispatch_send",
+      "description": "把開發需求或點子送到利姆路的派工收件匣，由背景的 Claude 整理與派工。text 必須是使用者的原話（只去掉「派工」「我有個點子」這類觸發詞），不可摘要、改寫或拆單。回覆時直接唸 summary。",
+      "risk": "reversible",
+      "title": "語音派工",
+      "params": {
+        "type": "object",
+        "properties": {"text": {
+          "description": "使用者原話（去掉觸發詞），1-5000 字",
+          "type": "string"
+        }},
+        "required": ["text"]
+      }
+    },
+    {
+      "examples": [
+        "第 12 號派工單進度如何",
+        "12 號單做好了沒"
+      ],
+      "name": "dispatch_status",
+      "description": "查詢某張派工單目前的狀態。",
+      "risk": "read",
+      "title": "查派工單",
+      "params": {
+        "type": "object",
+        "properties": {"id": {
+          "description": "派工單編號",
+          "type": "integer",
+          "minimum": 1
+        }},
+        "required": ["id"]
+      }
+    }
+  ]
+}

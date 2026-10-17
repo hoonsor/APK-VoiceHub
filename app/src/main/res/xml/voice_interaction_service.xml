@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<voice-interaction-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:sessionService="tw.hoonsor.voicehub.assistant.VoiceSessionService"
+    android:recognitionService="tw.hoonsor.voicehub.assistant.StubRecognitionService"
+    android:settingsActivity="tw.hoonsor.voicehub.ui.MainActivity"
+    android:supportsAssist="true"
+    android:supportsLaunchVoiceAssistFromKeyguard="false"
+    android:supportsLocalInteraction="false" />

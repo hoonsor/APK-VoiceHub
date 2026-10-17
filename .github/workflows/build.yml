@@ -1,0 +1,92 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main, ci-test]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      # GitHub runner 已內建 Android SDK（ANDROID_HOME），不需要另外安裝
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.11.1"
+
+      # 共用簽章 hoonsor-release.jks：Secrets 由倬用 setup-hoonsor-signing.ps1 寫入；沒有時 Gradle 退回 debug 簽章
+      - name: Decode signing key
+        env:
+          SIGNING_KEYSTORE_B64: ${{ secrets.SIGNING_KEYSTORE_B64 }}
+        run: |
+          if [ -n "$SIGNING_KEYSTORE_B64" ]; then
+            echo "$SIGNING_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/hoonsor-release.jks"
+            echo "SIGNING_KEYSTORE_PATH=$RUNNER_TEMP/hoonsor-release.jks" >> "$GITHUB_ENV"
+          else
+            echo "::warning::沒有 SIGNING_KEYSTORE_B64，這次用 debug 簽章（不能覆蓋安裝正式簽章版）"
+          fi
+
+      - name: Unit tests and release APKs
+        env:
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: |
+          set -o pipefail
+          gradle :app:testProdDebugUnitTest :app:assembleRelease --no-daemon 2>&1 | tee build.log
+
+      # 編譯失敗時把錯誤寫成 annotation，方便不下載 log 也能看到原因
+      - name: Report build errors
+        if: failure()
+        run: |
+          grep -E "^e: |error:|What went wrong|Could not|FAILED|> " build.log | head -40 | while IFS= read -r line; do
+            echo "::error::${line//%/%25}"
+          done || true
+
+      - name: Rename APKs with version
+        id: apk
+        run: |
+          VERSION=$(grep -oP 'val appVersion = "\K[^"]+' app/build.gradle.kts)
+          mkdir -p dist
+          cp app/build/outputs/apk/prod/release/app-prod-release.apk "dist/VoiceHub-v${VERSION}.apk"
+          cp app/build/outputs/apk/lab/release/app-lab-release.apk "dist/VoiceHub-LAB-v${VERSION}.apk"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: VoiceHub-v${{ steps.apk.outputs.version }}
+          path: dist/*.apk
+
+      # main 每次推送都更新「latest」預先發行版，手機打開固定網址即可下載最新 APK
+      - name: Publish rolling latest
+        if: github.ref == 'refs/heads/main'
+        run: |
+          cp dist/VoiceHub-v*.apk VoiceHub-latest.apk
+          cp dist/VoiceHub-LAB-v*.apk VoiceHub-LAB-latest.apk
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest VoiceHub-latest.apk VoiceHub-LAB-latest.apk \
+            --prerelease --title "最新版（自動編譯 v${{ steps.apk.outputs.version }}）" \
+            --notes "commit ${GITHUB_SHA::7} 自動編譯。手機直接點下方 APK 下載安裝；新功能先裝 LAB 版。" \
+            --target "${GITHUB_SHA}"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      # 推送 vX.Y.Z tag 時，自動建立 GitHub Release
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.apk

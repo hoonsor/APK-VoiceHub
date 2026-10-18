@@ -16,7 +16,8 @@
 - [x] 設定、健康檢查、API 測試台
 - [x] 單元測試（離線句型、APP 比對、規劃解析、VAD、派工觸發與回應、manifest 一致性）
 - [x] 建立 GitHub repo（public）、CI 發佈 latest（目前 debug 簽章）
-- [ ] 把 hoonsor/APK-VoiceHub 加進 setup-hoonsor-signing.ps1 的 $Repos 並執行（之後 latest 才是共用簽章）
+- [x] 把 hoonsor/APK-VoiceHub 加進 setup-hoonsor-signing.ps1 的 $Repos（2026-10-17）
+- [ ] 倬在電腦 A 執行 setup-hoonsor-signing.ps1 產生 hoonsor-release.jks 並寫入 Secrets（之後 latest 才是共用簽章）
 - [x] 協定唯一來源 AGENT_PROTOCOL.md、共用 SDK HoonsorAgent.kt、CI 相容檢查、deprecated 支援
 - [ ] 實機驗證（見下方清單）
 - [ ] Claude Design 版面方案比較（SOP 第 3 階段，事後補）
@@ -49,13 +50,18 @@
 - 尚未做備份匯出／匯入
 
 ## 下一步
-1. 倬同意後建立 GitHub repo `hoonsor/APK-VoiceHub`（public，與其他 APK repo 一致）、push、把 repo 加進 `setup-hoonsor-signing.ps1` 的 `$Repos` 再執行一次
+1. 倬執行 `D:\01-Project\36-Claude使用流程改善\setup-hoonsor-signing.ps1`（repo 已加進 `$Repos`），完成後重跑 CI，確認 latest 改用共用簽章
 2. 實機驗證上面清單，依編號修正
 3. 鬧鐘 APP 先補 Agent API（alarm_list、alarm_create、alarm_toggle、timer_start…），讓大腦能直接操作而不是透過系統時鐘 Intent
 4. 備份四件套、對話紀錄
 5. Claude Design 補版面方案比較，更新 DESIGN.md
 
 ## 交接紀錄
+### 2026-10-18／電腦 A
+- 完成：setup-hoonsor-signing.ps1 加入 APK-VoiceHub，並改存為含 BOM 的 UTF-8（原本無 BOM，在 Windows PowerShell 5.1 下中文會亂碼）；各中文 APP 資料夾補上 CODE_LOCATION.txt 與指向 D:\dev 的 CLAUDE.md
+- 決定＋原因：倬選定免接線更新方案 B＋D（GitHub Releases＋Obtainium、App 內自我更新），鬧鐘 APP 已先實作（hoonsor/APK-Alarm v0.11.0）
+- 未完成：共用金鑰尚未產生，各 repo 都還沒有 SIGNING_* Secrets，目前 CI 沒有 Secrets 時改用 debug 簽章，而 debug 簽章每次執行都不同，無法覆蓋安裝
+
 ### 2026-10-17（續）／電腦 A
 - 完成：建立 public repo、CI 綠燈並發佈 latest；依倬同意修改規則：新增 docs/AGENT_PROTOCOL.md（唯一來源）、共用 SDK、相容檢查工具與測試、deprecated 欄位；SOP 技能 v1.1.0 原始檔與上傳 zip 放在 36 號專案 skills/；AI-PROFILE v0.4.2
 - 決定＋原因：APP 改版不通知大腦，改用相容規則＋CI 自動檢查（大腦每次即時讀 describe，不寫死動作）；協定只寫一份避免不一致

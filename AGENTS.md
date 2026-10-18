@@ -41,8 +41,17 @@ app/src/main/java/tw/hoonsor/voicehub/
 ├─ (tw/hoonsor/agent/HoonsorAgent.kt)  共用提供者 SDK：各 APP 整份複製使用，本 APP 的 AgentProvider 也用它
 ├─ dispatch/              語音派工：DispatchTrigger（觸發詞）、DispatchClient（HTTP）、DispatchQueue（離線暫存）、DispatchService
 ├─ data/                  Settings、KeyVault
-└─ ui/                    MainActivity（動作／測試台／健康檢查／設定）、Screens、Common、Icons（手繪向量）、theme（唯一色票）
+├─ manual/                Manual：說明書解析、搜尋、依手機實際偵測結果判斷「可用／規劃中／未安裝」（純邏輯，ManualTest）
+└─ ui/                    MainActivity（動作／說明書／測試台／健康檢查／設定）、Screens、ManualScreen、Common、Icons（手繪向量）、theme（唯一色票）
+docs/manual/MANUAL.md     使用說明書的唯一來源，build.gradle.kts 直接打包成 assets/MANUAL.md
 ```
+
+### 使用說明書
+- 內容只寫在 `docs/manual/MANUAL.md`；格式（章、節、`<!-- action: 套件:動作 -->` 標記、`- 「例句」→ 說明`）寫在該檔開頭的註解
+- 點例句會用 `AssistantActivity.EXTRA_DRAFT` 打開對話畫面並放進輸入框，**不會自動送出**（所以正式版也開放這個入口）
+- 狀態標籤即時偵測（ToolRegistry 的 describe 結果＋PackageManager），說明書文字裡不寫死「已完成」
+- 檢查：`ManualTest`（內建動作都要收錄）；`tools/manual_coverage_check.py`（所有 APK-* repo 的動作都要收錄，CI 每天跑）
+  - 本機：`python tools/manual_coverage_check.py --local D:\dev`
 
 ### 一句話的處理流程（Orchestrator）
 1. 有待確認動作 → 是／否判斷
@@ -83,6 +92,6 @@ app/src/main/java/tw/hoonsor/voicehub/
 穩定可靠第一、每步可回滾。完整見 `36-Claude使用流程改善/AI-PROFILE.md`。
 
 ## Always／Ask／Never
-- **Always**：改程式前 commit 快照；改動作就同步 `BuiltinCatalog`、`docs/AGENT_API.md`、`docs/agent-manifest.json`、`docs/FEATURES.md`；新功能先發 LAB 版；每版更新 PROJECT_STATUS.md
+- **Always**：改程式前 commit 快照；改動作就同步 `BuiltinCatalog`、`docs/AGENT_API.md`、`docs/agent-manifest.json`、`docs/FEATURES.md`、**`docs/manual/MANUAL.md`**；倬的任何 APP 新增 Agent API 或動作，同一次工作就補說明書（AGENT_PROTOCOL 第 7 節）；新功能先發 LAB 版；每版更新 PROJECT_STATUS.md
 - **Ask**：建立／公開 GitHub repo、對外送出（派工 POST、簡訊）、改套件名、換簽章、加無障礙服務
 - **Never**：把 API key、keystore、密碼寫進 repo；`--force` push；在 APP 端用 AI 改寫派工內容；用語音處理公務／個資

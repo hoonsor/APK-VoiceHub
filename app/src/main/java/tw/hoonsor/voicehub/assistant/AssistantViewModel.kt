@@ -34,6 +34,8 @@ data class UiState(
     val messages: List<Msg> = emptyList(),
     val confirming: Boolean = false,
     val keyboard: Boolean = false,
+    /** 預先放進輸入框的文字（從說明書點例句進來），要按送出才執行 */
+    val draft: String = "",
     /** 動作跳到其他 APP，畫面應關閉 */
     val closeRequested: Boolean = false,
 )
@@ -71,6 +73,9 @@ class AssistantViewModel : ViewModel() {
     }
 
     fun toggleKeyboard() = _state.update { it.copy(keyboard = !it.keyboard) }
+
+    /** 打開鍵盤並放入草稿，不開始聽、也不送出 */
+    fun prefill(text: String) = _state.update { it.copy(keyboard = true, draft = text) }
 
     /** 麥克風鈕：待命時開始聽；聆聽中按＝講完了；其他狀態按＝中斷 */
     fun onMic() {

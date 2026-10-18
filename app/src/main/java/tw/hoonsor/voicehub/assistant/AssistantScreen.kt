@@ -107,7 +107,7 @@ fun AssistantScreen(
                 Spacer(Modifier.height(12.dp))
             }
             if (state.keyboard) {
-                TextInput(onSend)
+                TextInput(state.draft, onSend)
                 Spacer(Modifier.height(12.dp))
             }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
@@ -273,8 +273,8 @@ private fun PillButton(text: String, bg: Color, fg: Color, modifier: Modifier = 
 }
 
 @Composable
-private fun TextInput(onSend: (String) -> Unit) {
-    var text by remember { mutableStateOf("") }
+private fun TextInput(draft: String, onSend: (String) -> Unit) {
+    var text by remember(draft) { mutableStateOf(draft) }
     val send = {
         onSend(text)
         text = ""

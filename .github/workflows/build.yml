@@ -6,12 +6,26 @@ on:
     tags: ["v*"]
   pull_request:
   workflow_dispatch:
+  # 每天檢查一次說明書：其他 APP 新增 APP／動作時，這裡會失敗並寄信通知
+  schedule:
+    - cron: "0 1 * * *"   # 台灣時間 09:00
 
 permissions:
   contents: write
 
 jobs:
+  # 使用說明書必須收錄所有 APK-* repo 開放的 APP 與動作（tools/manual_coverage_check.py）
+  manual:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Manual coverage
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 tools/manual_coverage_check.py --github hoonsor
+
   build:
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5

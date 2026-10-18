@@ -61,8 +61,9 @@ class MainActivity : ComponentActivity() {
                     Box(Modifier.weight(1f)) {
                         when (tab) {
                             0 -> CatalogScreen()
-                            1 -> TestBenchScreen()
-                            2 -> HealthScreen()
+                            1 -> ManualScreen()
+                            2 -> TestBenchScreen()
+                            3 -> HealthScreen()
                             else -> SettingsScreen()
                         }
                     }
@@ -75,7 +76,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun BottomBar(selected: Int, onSelect: (Int) -> Unit) {
-    val items = listOf<Pair<String, ImageVector>>("動作" to Glyph.Grid, "測試台" to Glyph.Flask, "健康檢查" to Glyph.Heart, "設定" to Glyph.Gear)
+    val items = listOf<Pair<String, ImageVector>>("動作" to Glyph.Grid, "說明書" to Glyph.Book, "測試台" to Glyph.Flask, "健康檢查" to Glyph.Heart, "設定" to Glyph.Gear)
     Row(
         Modifier
             .fillMaxWidth()

@@ -2,7 +2,7 @@
 
 > 所有倬的 APP 都依這份實作。SOP（hoonsor-android-app 技能）、各 APP 的 `docs/AGENT_API.md` 都只引用這裡，不複製內容。
 > 網址：https://github.com/hoonsor/APK-VoiceHub/blob/main/docs/AGENT_PROTOCOL.md
-> 協定版本：api 1／SDK 1／最後更新 2026-10-17
+> 協定版本：api 1／SDK 1／最後更新 2026-10-18
 
 ## 1. 角色
 - **提供者**：每個 APP。把自己的功能開放成「動作」
@@ -28,6 +28,7 @@
 6. 複製 `tools/agent_compat_check.py` 到 APP 的 `tools/`，CI 加相容檢查（第 6 節）
 7. 寫 `docs/agent-manifest.json`（與 describe 完全相同，JVM 測試比對）和 `docs/AGENT_API.md`（給人看）
 8. 設定頁加「API 測試台」；健康檢查頁顯示 Agent API 狀態
+9. **更新語音總控的使用說明書**（必做，見第 7 節）：在 hoonsor/APK-VoiceHub 的 `docs/manual/MANUAL.md` 為這個 APP 新增一章（標題下一行 `<!-- app: 套件名 -->`），每個動作一節（`<!-- action: 套件名:動作名 -->`），每節至少 3 句台灣口語例句，並寫出限制與要先確認的動作
 
 ## 3. 方法
 `ContentProvider.call(method, null, extras)`，結果放在回傳 Bundle 的 `json`。
@@ -82,11 +83,20 @@
 - 每個 APP 的 CI 執行 `python3 tools/agent_compat_check.py --git-baseline docs/agent-manifest.json`，與最近一個 `v*` tag 的 manifest 比對；有破壞性變更時編譯失敗
 - 真的必須破壞（協定升版）時，commit 訊息加 `BREAKING-AGENT-API`，只警告不擋。**這種情況才要在語音總控的 PROJECT_STATUS.md 待辦加一筆**
 - JVM 測試：`docs/agent-manifest.json` 與 describe 完全相同
+- **說明書收錄檢查**：語音總控的 CI 每天執行 `tools/manual_coverage_check.py --github hoonsor`，讀所有 `APK-*` repo 的 `docs/agent-manifest.json`，有沒收錄的 APP／動作（或說明書標了已刪除的動作）就失敗，GitHub 會寄信通知。語音總控 APP 內的說明書也會在最後自動列出「說明書尚未收錄」的動作
 
-## 7. 什麼時候要更新語音總控（其餘情況都不用）
+## 7. 什麼時候要更新語音總控
+**程式**（其餘情況都不用改程式）：
 1. 協定升版（api 2：新增方法、新錯誤碼、傳檔案、串流）
 2. 某個 APP 需要大腦做特別處理（例：語音派工要原話直送、不經 AI）
 3. 新的 data 約定（例：新增 `leavesApp` 這類旗標）
 
+**使用說明書 `docs/manual/MANUAL.md`**（一定要更新，跟著 APP 的同一次工作完成）：
+1. 新的 APP 開始規劃或開放 Agent API（有了 `docs/agent-manifest.json`）→ 新增一章
+2. 新增動作 → 新增一節；動作標 `deprecated` 後真的刪除 → 刪掉那一節
+3. 動作的行為、限制、例句有明顯改變 → 修改那一節
+4. 「可用／規劃中」狀態由 APP 在手機上即時偵測，**不用**為了 APP 實作完成而改說明書
+
 ## 8. 變更紀錄
+- 2026-10-18：新增「使用說明書必須收錄每個 APP 與動作」規則（第 2 節第 9 步、第 6、7 節）與每日收錄檢查；協定本身不變（仍是 api 1）
 - 2026-10-17 api 1／SDK 1：初版；加入 deprecated、相容規則、撰寫指南、相容檢查工具

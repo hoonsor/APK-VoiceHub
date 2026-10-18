@@ -62,8 +62,11 @@ class AssistantActivity : ComponentActivity() {
     private fun startSession(intent: Intent?) {
         // LAB 版測試入口：adb shell am start -n <pkg>/.assistant.AssistantActivity --es text "計時五分鐘"
         val injected = if (BuildConfig.FLAVOR == "lab") intent?.getStringExtra(EXTRA_TEXT) else null
+        // 從說明書點例句：只放進輸入框，由倬按送出（正式版也開放，因為不會自動執行）
+        val draft = intent?.getStringExtra(EXTRA_DRAFT)?.take(500)
         when {
             !injected.isNullOrBlank() -> vm.submitText(injected)
+            !draft.isNullOrBlank() -> vm.prefill(draft)
             hasMic() -> vm.startListening()
             else -> askMic.launch(Manifest.permission.RECORD_AUDIO)
         }
@@ -71,6 +74,7 @@ class AssistantActivity : ComponentActivity() {
 
     companion object {
         const val EXTRA_TEXT = "text"
+        const val EXTRA_DRAFT = "draft"
     }
 
     private fun hasMic() = checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED

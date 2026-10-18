@@ -1,6 +1,6 @@
 # PROJECT_STATUS — 語音總控（APK-VoiceHub）
 
-- 目前版本：v0.1.0（尚未發佈；本機建置與模擬器驗證通過）
+- 目前版本：v0.2.0（main 推送後由 CI 發佈 latest；使用說明書已在模擬器驗證）
 - 程式碼：`D:\dev\APK-VoiceHub`；專案資料夾 `D:\01-Project\42-語音總控制APP`（CODE_LOCATION.txt 指過來）
 - 套件：`tw.hoonsor.voicehub`（LAB：`tw.hoonsor.voicehub.lab`）
 
@@ -17,7 +17,8 @@
 - [x] 單元測試（離線句型、APP 比對、規劃解析、VAD、派工觸發與回應、manifest 一致性）
 - [x] 建立 GitHub repo（public）、CI 發佈 latest（目前 debug 簽章）
 - [x] 把 hoonsor/APK-VoiceHub 加進 setup-hoonsor-signing.ps1 的 $Repos（2026-10-17）
-- [ ] 倬在電腦 A 執行 setup-hoonsor-signing.ps1 產生 hoonsor-release.jks 並寫入 Secrets（之後 latest 才是共用簽章）
+- [x] 倬在電腦 A 執行 setup-hoonsor-signing.ps1 產生 hoonsor-release.jks 並寫入 Secrets（2026-10-18，latest 已驗證為共用簽章）
+- [x] 使用說明書分頁 F30（v0.2.0）：docs/manual/MANUAL.md 唯一來源、搜尋、點例句帶入、即時狀態、ManualTest、每日收錄檢查 manual_coverage_check.py
 - [x] 協定唯一來源 AGENT_PROTOCOL.md、共用 SDK HoonsorAgent.kt、CI 相容檢查、deprecated 支援
 - [ ] 實機驗證（見下方清單）
 - [ ] Claude Design 版面方案比較（SOP 第 3 階段，事後補）
@@ -27,6 +28,7 @@
 ## 版本歷程
 | 版本 | 日期 | commit | 變更 | 為什麼 |
 |---|---|---|---|---|
+| v0.2.0 | 2026-10-18 | （本次） | 新增「說明書」分頁：內建 17 個動作＋倬注音、照片整理箱、螢幕翻譯共 76 節，每節多句例句；搜尋、目錄、點例句帶進對話畫面（`EXTRA_DRAFT`，不自動送出）；依手機即時偵測標示可用／規劃中／未安裝，並列出未收錄的動作；CI 每天檢查所有 APK-* repo 的動作都已收錄 | 倬要工具書式的使用說明，並要求之後新增可供語音總控操作的 APP 時一定要更新說明書 |
 | v0.1.0 | 2026-10-17 | 初始 | 第一版：對話畫面、喚醒、語音、AI 規劃、15 個系統動作、Agent API 大腦＋提供者、語音派工、設定／健康檢查／測試台 | 倬要一個 Gemini Live 式的總入口，能用說的控制自己開發的 APP 與手機；派工規格由 40-利姆路提供 |
 
 ## 待實機驗證（OPPO Reno 14F，請用編號回報）
@@ -57,6 +59,17 @@
 5. Claude Design 補版面方案比較，更新 DESIGN.md
 
 ## 交接紀錄
+### 2026-10-18（續）／電腦 A
+- 完成：v0.2.0 使用說明書（F30）。內容只寫在 `docs/manual/MANUAL.md`，由 `build.gradle.kts` 的 assets srcDirs 直接打包；`manual/Manual.kt` 負責解析、搜尋與狀態判斷，`ui/ManualScreen.kt` 是畫面；`ManualTest` 10 個測試；`tools/manual_coverage_check.py`（含 7 個測試）在 CI 的 `manual` job 每天 09:00 執行；模擬器驗證過目錄跳轉、搜尋、例句帶入、「規劃中／未安裝」標籤
+- 決定＋原因：
+  - 說明書用受限的 Markdown＋`<!-- action: 套件:動作 -->` 標記，而不是 JSON：GitHub 上可以直接閱讀，也方便機器檢查
+  - 狀態不寫在說明書文字裡，改成即時偵測：其他 APP 實作 API 時不用回頭改說明書
+  - 點例句只帶入、不送出：正式版也能開放這個入口，不會被其他 APP 拿來觸發動作
+  - 收錄檢查放在語音總控的每日排程：其他 APP 的 repo 不用改 CI，新 APP 只要有 agent-manifest.json 就會被檢查到
+- 規則：AGENT_PROTOCOL.md 第 2 節第 9 步、第 6、7 節；AGENTS.md Always；SOP 技能 hoonsor-android-app v1.2.0（36 號專案 `skills/`，上傳用 zip 已更新，倬要重新上傳到 claude.ai）
+- 發現：倬注音、照片整理箱、螢幕翻譯的 Agent API 都還是「規劃中」（只有 manifest，沒有 AgentProvider），所以目前語音總控實際能用的只有內建動作
+- 已知：`lintLabDebug` 有一個舊錯誤（VoiceServices.kt 的 `startActivityAndCollapse(Intent)` 已棄用），不影響 assembleRelease，之後再修
+
 ### 2026-10-18／電腦 A
 - 完成：setup-hoonsor-signing.ps1 加入 APK-VoiceHub，並改存為含 BOM 的 UTF-8（原本無 BOM，在 Windows PowerShell 5.1 下中文會亂碼）；各中文 APP 資料夾補上 CODE_LOCATION.txt 與指向 D:\dev 的 CLAUDE.md
 - 決定＋原因：倬選定免接線更新方案 B＋D（GitHub Releases＋Obtainium、App 內自我更新），鬧鐘 APP 已先實作（hoonsor/APK-Alarm v0.11.0）

@@ -53,13 +53,18 @@
 - 尚未做備份匯出／匯入
 
 ## 下一步
-1. 倬執行 `D:\01-Project\36-Claude使用流程改善\setup-hoonsor-signing.ps1`（repo 已加進 `$Repos`），完成後重跑 CI，確認 latest 改用共用簽章
-2. 實機驗證上面清單，依編號修正
-3. 鬧鐘 APP 先補 Agent API（alarm_list、alarm_create、alarm_toggle、timer_start…），讓大腦能直接操作而不是透過系統時鐘 Intent
+1. 實機驗證上面清單（裝最新 latest，用 Obtainium 或 App 內更新），依編號回報修正
+2. 鬧鐘 APP 補 Agent API（照 AGENT_PROTOCOL.md：複製 SDK、AgentProvider、相容檢查）。目前四個 APP 都只有 manifest、沒有 Provider，語音總控實際能用的只有內建動作
+3. 依序補倬注音、照片整理箱、螢幕翻譯的 Provider
 4. 備份四件套、對話紀錄
-5. Claude Design 補版面方案比較，更新 DESIGN.md
+5. Claude Design 補版面方案比較，更新 DESIGN.md；修 lintLabDebug 的 startActivityAndCollapse 棄用警告
 
 ## 交接紀錄
+### 2026-10-23／電腦 A
+- 完成：v0.2.1。設定頁 AI 網址的大陸廠牌警告（ProviderPolicy＋5 個測試）、README「隱私與資料規範」；AI-PROFILE 已到 v0.4.5 並同步（10/21 補進 CLAUDE.md 被直接改寫的 4 條規則）
+- 決定＋原因：網址分類只比對網域結尾，避免被 query 或相似字串騙過；本機與區網位址不提醒（AI-PROFILE 允許本機離線模型）
+- 未完成：實機驗證；各 APP 的 Provider
+
 ### 2026-10-18（續）／電腦 A
 - 完成：v0.2.0 使用說明書（F30）。內容只寫在 `docs/manual/MANUAL.md`，由 `build.gradle.kts` 的 assets srcDirs 直接打包；`manual/Manual.kt` 負責解析、搜尋與狀態判斷，`ui/ManualScreen.kt` 是畫面；`ManualTest` 10 個測試；`tools/manual_coverage_check.py`（含 7 個測試）在 CI 的 `manual` job 每天 09:00 執行；模擬器驗證過目錄跳轉、搜尋、例句帶入、「規劃中／未安裝」標籤
 - 決定＋原因：

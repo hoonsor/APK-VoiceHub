@@ -1,6 +1,6 @@
 語音總控 使用說明書
 
-> 適用版本：v0.2.0 起｜最後更新：2026-10-18
+> 適用版本：v0.2.0 起｜最後更新：2026-10-23
 > 這份檔案就是 APP 內「說明書」分頁的內容（打包進 APK）。改這裡＝改 APP 內的說明書。
 
 <!--
@@ -828,6 +828,189 @@ AI 連不上（沒網路、key 錯）時，畫面會顯示「改用離線模式�
 
 - 「從備份還原翻譯設定」
 
+# SoundFlow（音訊播放器）
+<!-- app: tw.hoonsor.soundflow -->
+
+播放新知雷達送進 NotebookLM 產生的 Podcast，以及從 YouTube 分享進來、轉成音檔的影片。講到「這集」「目前這集」時，指的是 SoundFlow 正在播（或暫停中）的那一集；講標題裡的幾個字就能找到某一集，同時符合好幾集時它會先問你是哪一集。
+
+## 查詢音檔
+<!-- action: tw.hoonsor.soundflow:track_list -->
+
+可以只查 Podcast 或 YouTube，也可以只看沒聽過、聽到一半的；只查詢不會開始播。
+
+- 「最近有哪些新的 Podcast」→ 列出最新幾集
+- 「YouTube 分頁有幾集沒聽」→ 只算沒聽過的
+- 「找一下講 Claude 的那集」→ 用標題關鍵字找
+- 「我聽到一半的有哪些」→ 列出有進度但沒聽完的
+
+## 播放音檔
+<!-- action: tw.hoonsor.soundflow:track_play -->
+
+預設從上次聽到的地方繼續；要從頭請說「從頭播」。
+
+- 「播最新的 Podcast」→ 播 Podcast 分頁最新一集
+- 「繼續聽剛剛那集」→ 接續上次播放
+- 「播 YouTube 最新一支沒聽過的」→ 跳過聽過的
+- 「從頭播講 NotebookLM 的那集」→ 不接續進度
+
+## 目前播放
+<!-- action: tw.hoonsor.soundflow:now_playing_get -->
+
+- 「現在在播什麼」→ 唸出標題
+- 「這集還剩多久」→ 唸出剩餘時間
+- 「現在是幾倍速」→ 唸出倍速與循環模式
+
+## 播放控制
+<!-- action: tw.hoonsor.soundflow:playback_control -->
+
+只控制 SoundFlow；講「音樂暫停」這類沒指定 APP 的話，會交給手機目前在播的那個 APP。
+
+- 「SoundFlow 暫停」→ 暫停
+- 「下一集」→ 跳到下一集
+- 「繼續播」→ 從暫停處繼續
+- 「上一首」→ 回上一集
+
+## 快轉倒轉
+<!-- action: tw.hoonsor.soundflow:playback_seek -->
+
+- 「倒轉三十秒」→ 往回 30 秒
+- 「快轉兩分鐘」→ 往後 2 分鐘
+- 「跳到第十分鐘」→ 直接跳到 10:00
+- 「剛剛沒聽清楚，倒回去一點」→ 往回 15 秒
+
+## 調整倍速
+<!-- action: tw.hoonsor.soundflow:playback_speed_set -->
+
+範圍 0.5 到 3 倍。
+
+- 「調成一點五倍速」→ 1.5 倍
+- 「快一點」→ 加快 0.25 倍
+- 「恢復正常速度」→ 1 倍
+- 「兩倍速播放」→ 2 倍
+
+## 循環與隨機
+<!-- action: tw.hoonsor.soundflow:playback_mode_set -->
+
+- 「單曲循環」→ 一直重播這集
+- 「整個清單重複播」→ 清單循環
+- 「關掉循環」→ 播完就停
+- 「隨機播放」→ 打開隨機
+
+## 睡眠計時
+<!-- action: tw.hoonsor.soundflow:sleep_timer_set -->
+
+時間到前 10 秒音量會慢慢變小再停。
+
+- 「三十分鐘後停止播放」→ 30 分鐘後停
+- 「這集播完就停」→ 等這集結束
+- 「一個小時後關掉」→ 60 分鐘後停
+- 「取消睡眠計時」→ 不停了
+
+## 加入待播
+<!-- action: tw.hoonsor.soundflow:queue_add -->
+
+- 「下一首播講 Gemini 的那集」→ 插在這集後面
+- 「把最新的 YouTube 加進待播」→ 排到最後
+- 「這集聽完接著播 Claude 那集」→ 插在這集後面
+
+## 查詢清單
+<!-- action: tw.hoonsor.soundflow:playlist_list -->
+
+- 「我有哪些播放清單」→ 列出自訂與自動清單
+- 「通勤清單有幾集」→ 唸出集數與總長度
+- 「播放清單有哪些」→ 同上
+
+## 播放清單
+<!-- action: tw.hoonsor.soundflow:playlist_play -->
+
+除了你自己建的清單，還有自動清單：最新加入、未聽完、聽到一半、最近播放。
+
+- 「播通勤清單」→ 播你建的清單
+- 「隨機播放未聽完的」→ 自動清單＋隨機
+- 「播最新加入的清單」→ 自動清單
+
+## 加入清單
+<!-- action: tw.hoonsor.soundflow:playlist_track_add -->
+
+只能加進你自己建的清單；清單不存在時說「建一個」就會順便建立。
+
+- 「把這集加到通勤清單」→ 加入目前這集
+- 「把講 AI Agent 的那集加進學習清單」→ 用關鍵字找
+- 「建一個睡前清單，把這集放進去」→ 新建清單再加入
+
+## 重新命名
+<!-- action: tw.hoonsor.soundflow:track_rename -->
+
+Podcast 改名只改 SoundFlow 裡的名稱，新知網站上不變；隨時可以還原原本的標題。
+
+- 「把這集改名叫 Claude 新功能整理」→ 改目前這集
+- 「剛剛那支 YouTube 改名成健身課」→ 改指定的那支
+- 「這集還原原本的標題」→ 改回原標題
+
+## 標記已聽
+<!-- action: tw.hoonsor.soundflow:track_mark_played -->
+
+- 「這集標成聽完了」→ 標成已聽
+- 「這集我聽過了」→ 同上
+- 「把 Gemini 那集標成沒聽過」→ 改回未聽
+
+## 刪除音檔
+<!-- action: tw.hoonsor.soundflow:track_delete -->
+
+**會先問你確定嗎。** 刪掉的會先進垃圾桶，30 天內都能還原；Podcast 只是從 SoundFlow 藏起來，新知網站照常能播。
+
+- 「刪掉這集」→ 刪目前這集
+- 「把那支健身影片刪掉」→ 用關鍵字找
+- 「這集不要了」→ 刪目前這集
+
+## 還原音檔
+<!-- action: tw.hoonsor.soundflow:track_restore -->
+
+- 「把剛剛刪掉的那集救回來」→ 還原最近刪的
+- 「還原健身影片」→ 用關鍵字找
+- 「垃圾桶裡的 Claude 那集拿回來」→ 用關鍵字找
+
+## 加入 YouTube
+<!-- action: tw.hoonsor.soundflow:youtube_add -->
+
+要有完整網址才能用；一般請在 YouTube 按「分享 → SoundFlow」最快。送出後通常幾分鐘就轉好，出現在 YouTube 分頁。
+
+- 「把這個 YouTube 網址加進 SoundFlow」→ 搭配複製好的網址
+- 「這支影片轉成音檔」→ 同上
+- 「把 youtu.be 那個連結加進來」→ 同上
+
+## 轉檔進度
+<!-- action: tw.hoonsor.soundflow:youtube_job_list -->
+
+- 「YouTube 轉好了沒」→ 列出還在轉的
+- 「有沒有轉檔失敗的」→ 列出失敗的與原因
+- 「還有幾支在排隊」→ 唸出數量
+
+## 系統狀態
+<!-- action: tw.hoonsor.soundflow:status_get -->
+
+- 「SoundFlow 空間還夠嗎」→ 雲端與手機用量
+- 「轉檔主機有在線嗎」→ N100 最後上線時間
+- 「手機快取用了多少」→ 已下載的音檔大小
+
+## 匯出備份
+<!-- action: tw.hoonsor.soundflow:backup_export -->
+
+備份播放清單、收聽進度、改過的名稱與設定，不含音檔本身。
+
+- 「備份 SoundFlow」→ 存到下載資料夾
+- 「把播放清單匯出」→ 同上
+- 「SoundFlow 的設定存一份」→ 同上
+
+## 匯入備份
+<!-- action: tw.hoonsor.soundflow:backup_import -->
+
+**會先問你確定嗎**，然後打開選檔畫面；匯入前會自動備份一份，可以復原。
+
+- 「匯入 SoundFlow 備份」→ 合併進目前資料
+- 「用備份檔還原播放清單」→ 合併進目前資料
+- 「用備份取代 SoundFlow 現在的資料」→ 取代目前資料
+
 # 情境範例
 
 把好幾個動作串在一起的實際用法。標「規劃中」APP 的句子，要等那個 APP 開放語音控制後才能用。
@@ -872,6 +1055,18 @@ AI 連不上（沒網路、key 錯）時，畫面會顯示「改用離線模式�
 - 「原文改成日文，切換成漫畫模式」
 - 「翻譯這個畫面」
 - 「關掉翻譯」
+
+## 通勤聽新知（SoundFlow）
+
+- 「播最新的 Podcast，調成一點五倍速」
+- 「倒轉三十秒」
+- 「這集加到學習清單，下一集」
+- 「YouTube 轉好了沒」→「播 YouTube 最新一支沒聽過的」
+
+## 睡前聽（SoundFlow）
+
+- 「播睡前清單，三十分鐘後停止播放」
+- 「這集播完就停」
 
 ## 想到點子時
 

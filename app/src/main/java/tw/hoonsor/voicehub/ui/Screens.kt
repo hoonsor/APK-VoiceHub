@@ -60,6 +60,8 @@ import tw.hoonsor.voicehub.agent.Risk
 import tw.hoonsor.voicehub.ai.AiException
 import tw.hoonsor.voicehub.ai.ChatMessage
 import tw.hoonsor.voicehub.ai.LlmClient
+import tw.hoonsor.voicehub.ai.ProviderPolicy
+import androidx.compose.material3.Icon
 import tw.hoonsor.voicehub.assistant.AssistTileService
 import tw.hoonsor.voicehub.data.Settings
 import tw.hoonsor.voicehub.data.SttEngine
@@ -444,6 +446,7 @@ fun SettingsScreen() {
         SectionTitle("主力 AI（理解指令）")
         Card {
             Field("API 網址（OpenAI 相容）", llmBase, { llmBase = it })
+            PolicyNotice(llmBase)
             Spacer(Modifier.height(10.dp))
             Field("模型 ID", llmModel, { llmModel = it })
             Spacer(Modifier.height(10.dp))
@@ -463,6 +466,7 @@ fun SettingsScreen() {
         SectionTitle("Groq（語音轉文字＋AI 備援）")
         Card {
             Field("API 網址", groqBase, { groqBase = it })
+            PolicyNotice(groqBase)
             Spacer(Modifier.height(10.dp))
             Field("語音轉文字模型", sttModel, { sttModel = it })
             Spacer(Modifier.height(10.dp))
@@ -512,6 +516,30 @@ fun SettingsScreen() {
             "API key 以 Android Keystore 加密存在手機上，不會進入系統備份。指令內容會送到上面設定的 AI 服務，請勿用語音處理公務或個資。",
             color = C.dim, style = MaterialTheme.typography.bodyMedium,
         )
+    }
+}
+
+/** 網址屬於大陸廠牌雲端或 MiniMax 國際版時，即時顯示資料規範提醒（邊輸入邊更新，不用先儲存） */
+@Composable
+private fun PolicyNotice(url: String) {
+    val n = remember(url) { ProviderPolicy.notice(url) } ?: return
+    val color = if (n.danger) C.danger else C.warn
+    Spacer(Modifier.height(8.dp))
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(color.copy(alpha = 0.10f))
+            .border(1.dp, color.copy(alpha = 0.55f), RoundedCornerShape(12.dp))
+            .padding(12.dp),
+    ) {
+        Icon(Glyph.Cross.takeIf { n.danger } ?: Glyph.Bolt, null, tint = color, modifier = Modifier.size(18.dp))
+        Spacer(Modifier.size(8.dp))
+        Column {
+            Text(n.title, color = color, style = MaterialTheme.typography.labelLarge)
+            Spacer(Modifier.height(2.dp))
+            Text(n.body, color = C.textSoft, style = MaterialTheme.typography.bodyMedium)
+        }
     }
 }
 

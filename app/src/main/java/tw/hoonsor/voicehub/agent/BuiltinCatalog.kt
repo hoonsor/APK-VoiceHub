@@ -17,7 +17,8 @@ object BuiltinCatalog {
     val SETTINGS_PAGES = listOf("main", "wifi", "bluetooth", "display", "sound", "battery", "location", "apps", "notifications", "data", "airplane", "date")
     val STREAMS = listOf("media", "ring", "alarm", "notification")
     val MEDIA_COMMANDS = listOf("play", "pause", "toggle", "next", "previous")
-    val NAV_MODES = listOf("driving", "walking", "transit", "bicycling")
+    /** 只能往後加（相容規則）；motorcycle＝Google 地圖的機車模式 */
+    val NAV_MODES = listOf("driving", "walking", "transit", "bicycling", "motorcycle")
 
     val actions: List<ActionSpec> = listOf(
         ActionSpec(
@@ -61,13 +62,13 @@ object BuiltinCatalog {
             listOf("傳簡訊跟老婆說我晚點到"),
         ),
         ActionSpec(
-            "map_navigate", "導航", "用地圖 APP 導航到目的地。", Risk.REVERSIBLE,
+            "map_navigate", "導航", "用地圖 APP 導航到目的地。倬沒特別說交通方式時省略 mode，會用設定的預設（預設機車）。", Risk.REVERSIBLE,
             obj(
                 "destination" to str("目的地名稱或地址"),
-                "mode" to str("交通方式", NAV_MODES),
+                "mode" to str("交通方式；倬沒說就省略", NAV_MODES),
                 required = listOf("destination"),
             ),
-            listOf("導航到台北車站", "走路去最近的全聯"),
+            listOf("導航到台北車站", "走路去最近的全聯", "開車去桃園機場", "騎車去學校"),
         ),
         ActionSpec(
             "web_search", "網路搜尋", "用瀏覽器搜尋關鍵字。", Risk.READ,

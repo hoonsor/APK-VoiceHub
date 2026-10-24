@@ -196,10 +196,13 @@ class BuiltinActions(private val context: Context) {
 
     private fun mapNavigate(p: JSONObject): AgentResult {
         val dest = p.getString("destination")
-        val mode = when (p.optString("mode")) {
+        // 沒指定就用設定的預設交通方式（預設機車）
+        val wanted = p.optString("mode").ifBlank { tw.hoonsor.voicehub.Graph.settings.navMode }
+        val mode = when (wanted) {
             "walking" -> "w"
             "bicycling" -> "b"
             "transit" -> "r"
+            "motorcycle" -> "l" // Google 地圖的機車（兩輪車）模式
             else -> "d"
         }
         val nav = Intent(Intent.ACTION_VIEW, Uri.parse("google.navigation:q=${Uri.encode(dest)}&mode=$mode"))
@@ -208,7 +211,8 @@ class BuiltinActions(private val context: Context) {
         } catch (e: ActivityNotFoundException) {
             start(Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=${Uri.encode(dest)}")))
         }
-        return leaves("開始導航到 $dest")
+        val how = mapOf("walking" to "走路", "bicycling" to "騎腳踏車", "transit" to "搭大眾運輸", "motorcycle" to "騎機車", "driving" to "開車")[wanted] ?: "開車"
+        return leaves("開始導航到 $dest（$how）")
     }
 
     private fun webSearch(q: String): AgentResult {

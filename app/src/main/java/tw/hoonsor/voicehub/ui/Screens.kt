@@ -510,6 +510,13 @@ fun SettingsScreen() {
             ChipRow(listOf("0.9" to "慢", "1.0" to "正常", "1.1" to "稍快", "1.3" to "快"), rate.toString()) { rate = it.toFloat() }
             Spacer(Modifier.height(12.dp))
             VoicePicker(rate)
+            Text("導航預設交通方式", color = C.text, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 10.dp))
+            Text("說「導航到…」沒講怎麼去時用這個；說「開車去」「走路去」會照你說的。選了立刻生效。", color = C.muted, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 8.dp))
+            var nav by remember { mutableStateOf(s.navMode) }
+            ChipRow(
+                listOf("motorcycle" to "機車", "driving" to "開車", "walking" to "走路", "bicycling" to "腳踏車", "transit" to "大眾運輸"),
+                nav,
+            ) { nav = it; s.navMode = it }
             Spacer(Modifier.height(8.dp))
             ToggleRow("連續對話", "回覆完自動再聽下一句（問句一定會再聽）", autoListen) { autoListen = it }
             ToggleRow("跳到其他 APP 後自動關閉", "例如開啟 LINE、導航後收起對話視窗", autoClose) { autoClose = it }

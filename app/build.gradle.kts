@@ -5,7 +5,7 @@ plugins {
 }
 
 // SemVer → versionCode（1.2.3 → 10203）
-val appVersion = "0.2.2"
+val appVersion = "0.2.3"
 val appVersionCode = appVersion.split(".").map { it.toInt() }.let { (a, b, c) -> a * 10000 + b * 100 + c }
 
 // 共用簽章 hoonsor-release.jks：由 CI 從 Secrets 解出；本機或沒有 Secrets 時退回 debug 簽章

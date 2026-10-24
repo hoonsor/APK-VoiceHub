@@ -61,6 +61,10 @@ class Settings(context: Context) {
     var speechRate: Float
         get() = p.getFloat("speechRate", 1.1f)
         set(v) = p.edit().putFloat("speechRate", v).apply()
+    /** 導航沒指定交通方式時用這個（BuiltinCatalog.NAV_MODES 其中之一） */
+    var navMode: String
+        get() = p.getString("navMode", "motorcycle") ?: "motorcycle"
+        set(v) = p.edit().putString("navMode", v).apply()
     /** 朗讀引擎套件名；null＝系統預設引擎 */
     var ttsEngine: String?
         get() = p.getString("ttsEngine", null)

@@ -31,6 +31,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -320,7 +321,12 @@ fun HealthScreen() {
         HealthItem("中文語音朗讀", ttsMsg.ifBlank { "按測試聽聽看；沒聲音請到系統「文字轉語音」安裝中文語音" }, null) {
             OutlineButton("測試朗讀", icon = Glyph.Play) {
                 scope.launch {
-                    ttsMsg = if (Graph.speaker.hasChinese()) "中文語音可用" else "找不到中文語音（或尚未初始化，請再按一次）"
+                    Graph.speaker.awaitReady()
+                    ttsMsg = if (Graph.speaker.hasChinese()) {
+                        "中文語音可用" + (Graph.speaker.currentVoiceName()?.let { "；目前聲音：$it（在設定 › 朗讀聲音更換）" } ?: "")
+                    } else {
+                        "找不到中文語音（或尚未初始化，請再按一次）"
+                    }
                     Graph.speaker.speak("你好，我是語音總控。", s.speechRate)
                 }
             }
@@ -502,6 +508,8 @@ fun SettingsScreen() {
             ToggleRow("唸出回覆", "關掉後只顯示文字", tts) { tts = it }
             Text("朗讀速度", color = C.text, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 6.dp, bottom = 8.dp))
             ChipRow(listOf("0.9" to "慢", "1.0" to "正常", "1.1" to "稍快", "1.3" to "快"), rate.toString()) { rate = it.toFloat() }
+            Spacer(Modifier.height(12.dp))
+            VoicePicker(rate)
             Spacer(Modifier.height(8.dp))
             ToggleRow("連續對話", "回覆完自動再聽下一句（問句一定會再聽）", autoListen) { autoListen = it }
             ToggleRow("跳到其他 APP 後自動關閉", "例如開啟 LINE、導航後收起對話視窗", autoClose) { autoClose = it }
@@ -541,6 +549,90 @@ private fun PolicyNotice(url: String) {
             Text(n.body, color = C.textSoft, style = MaterialTheme.typography.bodyMedium)
         }
     }
+}
+
+/**
+ * 朗讀聲音：選引擎、選聲音、每個聲音都能試聽。選了立刻生效（不用按儲存）。
+ */
+@Composable
+private fun VoicePicker(rate: Float) {
+    val ctx = LocalContext.current
+    val s = Graph.settings
+    val scope = rememberCoroutineScope()
+    val engines = remember { Graph.speaker.engines() }
+    var engine by remember { mutableStateOf(s.ttsEngine) }
+    var voice by remember { mutableStateOf(s.ttsVoice) }
+    var options by remember { mutableStateOf<List<tw.hoonsor.voicehub.voice.VoiceOption>?>(null) }
+    var playing by remember { mutableStateOf<String?>(null) }
+    // 從系統設定下載語音回來時重新讀清單
+    var refresh by remember { mutableIntStateOf(0) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { refresh++ }
+    LaunchedEffect(engine, refresh) {
+        options = null
+        options = Graph.speaker.voicesOf(engine)
+    }
+    fun choose(newEngine: String?, newVoice: String?) {
+        engine = newEngine
+        voice = newVoice
+        s.ttsEngine = newEngine
+        s.ttsVoice = newVoice
+        Graph.speaker.reload()
+    }
+    fun preview(name: String?) {
+        playing = name ?: "default"
+        scope.launch {
+            Graph.speaker.preview(engine, name, "你好，我是語音總控。明天下午三點要交人事月報。", rate)
+            playing = null
+        }
+    }
+
+    Text("朗讀聲音", color = C.text, style = MaterialTheme.typography.bodyLarge)
+    Text("選了立刻生效；按「試聽」聽聽看再決定。", color = C.muted, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 8.dp))
+    if (engines.size > 1) {
+        ChipRow(listOf("" to "系統預設引擎") + engines.map { it.name to it.label }, engine.orEmpty()) { picked ->
+            choose(picked.ifBlank { null }, null)
+        }
+        Spacer(Modifier.height(8.dp))
+    }
+    VoiceRow("預設聲音", "使用這個引擎的台灣中文預設聲音", voice == null, playing == "default", onPick = { choose(engine, null) }, onPreview = { preview(null) })
+    when (val list = options) {
+        null -> Text("讀取聲音清單中…", color = C.muted, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = 8.dp))
+        else -> {
+            list.forEach { o ->
+                VoiceRow(o.label, o.detail, voice == o.info.name, playing == o.info.name, onPick = { choose(engine, o.info.name) }, onPreview = { preview(o.info.name) })
+            }
+            if (list.isEmpty()) {
+                Text("這個引擎沒有中文聲音，或還沒下載語音資料。", color = C.warn, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = 8.dp))
+            }
+            Text("想要更多聲音：到系統的「文字轉語音」安裝語音資料（Google 語音服務 › 安裝語音資料 › 中文（台灣））。", color = C.dim, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp, bottom = 6.dp))
+            OutlineButton("開啟系統文字轉語音設定") {
+                runCatching { ctx.startActivity(Intent("com.android.settings.TTS_SETTINGS").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                    .onFailure { ctx.startActivity(Intent(SysSettings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun VoiceRow(label: String, detail: String, selected: Boolean, playing: Boolean, onPick: () -> Unit, onPreview: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
+            .background(if (selected) C.surfaceHi else C.surface)
+            .border(1.dp, if (selected) C.accent.copy(alpha = 0.7f) else C.border, RoundedCornerShape(12.dp))
+            .clickable(onClick = onPick).padding(start = 12.dp, end = 6.dp, top = 6.dp, bottom = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            Modifier.size(18.dp).clip(RoundedCornerShape(9.dp)).border(2.dp, if (selected) C.accent else C.dim, RoundedCornerShape(9.dp)),
+            contentAlignment = Alignment.Center,
+        ) { if (selected) Box(Modifier.size(8.dp).clip(RoundedCornerShape(4.dp)).background(C.accent)) }
+        Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+            Text(label, color = if (selected) C.accent else C.text, style = MaterialTheme.typography.bodyLarge)
+            Text(detail, color = C.muted, style = MaterialTheme.typography.labelMedium)
+        }
+        OutlineButton(if (playing) "播放中" else "試聽", icon = Glyph.Play, enabled = !playing, onClick = onPreview)
+    }
+    Spacer(Modifier.height(6.dp))
 }
 
 private suspend fun testChat(base: String, model: String, key: String?): Pair<String, Boolean> {

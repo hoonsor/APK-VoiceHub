@@ -61,6 +61,14 @@ class Settings(context: Context) {
     var speechRate: Float
         get() = p.getFloat("speechRate", 1.1f)
         set(v) = p.edit().putFloat("speechRate", v).apply()
+    /** 朗讀引擎套件名；null＝系統預設引擎 */
+    var ttsEngine: String?
+        get() = p.getString("ttsEngine", null)
+        set(v) = p.edit().putString("ttsEngine", v).apply()
+    /** 朗讀聲音名稱（TextToSpeech Voice.name）；null＝台灣中文預設聲音 */
+    var ttsVoice: String?
+        get() = p.getString("ttsVoice", null)
+        set(v) = p.edit().putString("ttsVoice", v).apply()
     /** 回覆後自動再聽（連續對話） */
     var autoListen: Boolean
         get() = p.getBoolean("autoListen", false)

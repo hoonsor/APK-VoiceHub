@@ -1,15 +1,25 @@
 """agent_compat_check.py 的測試：python -m unittest discover -s tools"""
 import copy
-import json
-import os
 import unittest
 
 from agent_compat_check import compare
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-with open(os.path.join(HERE, "..", "docs", "agent-manifest.json"), encoding="utf-8") as f:
-    BASE = json.load(f)
-
+# 測試自帶固定的範例 manifest，不讀 repo 的 docs/agent-manifest.json：
+# 這個測試檔會隨工具一起複製到各 APP，各 APP 的動作不同（2026-10-24 待辦 APP 的 CI 因此失敗過）
+BASE = {
+    "api": 1,
+    "package": "tw.hoonsor.example",
+    "actions": [
+        {
+            "name": "timer_set", "risk": "reversible",
+            "params": {"type": "object", "properties": {"seconds": {"type": "integer", "minimum": 1, "maximum": 86400}, "label": {"type": "string"}}, "required": ["seconds"]},
+        },
+        {
+            "name": "volume_set", "risk": "reversible",
+            "params": {"type": "object", "properties": {"stream": {"type": "string", "enum": ["media", "ring", "alarm"]}, "percent": {"type": "integer", "minimum": 0, "maximum": 100}}, "required": ["stream", "percent"]},
+        },
+    ],
+}
 
 def action(m, name):
     return next(a for a in m["actions"] if a["name"] == name)

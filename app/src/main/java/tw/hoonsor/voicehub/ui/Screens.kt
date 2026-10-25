@@ -520,6 +520,10 @@ fun SettingsScreen() {
                 listOf("motorcycle" to "機車", "driving" to "開車", "walking" to "走路", "bicycling" to "腳踏車", "transit" to "大眾運輸"),
                 nav,
             ) { nav = it; s.navMode = it }
+            Spacer(Modifier.height(12.dp))
+            var places by remember { mutableStateOf(s.places) }
+            Field("常用地點（每行一個「名稱=地點」）", places, { places = it; s.places = it }, minLines = 2, placeholder = "家=住家附近好找的地標\n公司=公司地址")
+            Text("說「回家」「導航去公司」就會導航到這裡寫的地點。地點只存在手機上，AI 只會看到「家」「公司」這些名稱。輸入後立刻生效。", color = C.muted, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 6.dp))
             Spacer(Modifier.height(8.dp))
             ToggleRow("連續對話", "回覆完自動再聽下一句（問句一定會再聽）", autoListen) { autoListen = it }
             ToggleRow("跳到其他 APP 後自動關閉", "例如開啟 LINE、導航後收起對話視窗", autoClose) { autoClose = it }

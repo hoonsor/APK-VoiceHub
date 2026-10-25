@@ -92,7 +92,7 @@ class Orchestrator(
         }
 
         onEvent(Event.PhaseChanged(Phase.THINKING))
-        val messages = mutableListOf(ChatMessage("system", Planner.systemPrompt(registry.catalogs.value, LocalDateTime.now())))
+        val messages = mutableListOf(ChatMessage("system", Planner.systemPrompt(registry.catalogs.value, LocalDateTime.now(), Places.parse(settings.places).keys)))
         messages += history
         messages += ChatMessage("user", utterance)
 

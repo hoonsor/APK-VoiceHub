@@ -65,6 +65,10 @@ class Settings(context: Context) {
     var navMode: String
         get() = p.getString("navMode", "motorcycle") ?: "motorcycle"
         set(v) = p.edit().putString("navMode", v).apply()
+    /** 常用地點，每行「名稱=地點」（例如 家=某地標）；只存在手機上，AI 只看得到名稱 */
+    var places: String
+        get() = p.getString("places", "") ?: ""
+        set(v) = p.edit().putString("places", v.trim()).apply()
     /** 朗讀引擎套件名；null＝系統預設引擎 */
     var ttsEngine: String?
         get() = p.getString("ttsEngine", null)

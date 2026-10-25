@@ -62,13 +62,13 @@ object BuiltinCatalog {
             listOf("傳簡訊跟老婆說我晚點到"),
         ),
         ActionSpec(
-            "map_navigate", "導航", "用地圖 APP 導航到目的地。倬沒特別說交通方式時省略 mode，會用設定的預設（預設機車）。", Risk.REVERSIBLE,
+            "map_navigate", "導航", "用地圖 APP 導航到目的地。倬沒特別說交通方式時省略 mode，會用設定的預設（預設機車）。倬說「回家」「去公司」這類常用地點時，destination 直接填名稱（例如「家」），APP 會換成設定的地點。", Risk.REVERSIBLE,
             obj(
                 "destination" to str("目的地名稱或地址"),
                 "mode" to str("交通方式；倬沒說就省略", NAV_MODES),
                 required = listOf("destination"),
             ),
-            listOf("導航到台北車站", "走路去最近的全聯", "開車去桃園機場", "騎車去學校"),
+            listOf("導航到台北車站", "走路去最近的全聯", "開車去桃園機場", "騎車去學校", "回家"),
         ),
         ActionSpec(
             "web_search", "網路搜尋", "用瀏覽器搜尋關鍵字。", Risk.READ,

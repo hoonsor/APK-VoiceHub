@@ -50,6 +50,14 @@ object OfflineParser {
             if (name.isNotEmpty()) return Call("app_open", JSONObject().put("name", name))
         }
 
+        if (Regex("^(?:導航|帶我)?(?:回家|回我家)$").matches(t)) {
+            return Call("map_navigate", JSONObject().put("destination", "家"))
+        }
+        Regex("^(?:幫我)?(?:導航|帶我)(?:到|去)?(.+)$").find(t)?.let { m ->
+            val dest = m.groupValues[1].trim()
+            if (dest.isNotEmpty()) return Call("map_navigate", JSONObject().put("destination", dest))
+        }
+
         Regex("^(?:搜尋|查一下|查詢|google|Google)(.+)$").find(t)?.let { m ->
             return Call("web_search", JSONObject().put("query", m.groupValues[1].trim()))
         }

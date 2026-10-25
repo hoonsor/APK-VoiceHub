@@ -195,7 +195,10 @@ class BuiltinActions(private val context: Context) {
     // ---------- 網路與地圖 ----------
 
     private fun mapNavigate(p: JSONObject): AgentResult {
-        val dest = p.getString("destination")
+        val said = p.getString("destination")
+        // 「家」「公司」這類常用地點換成設定的實際地點
+        val place = Places.resolve(said, Places.parse(tw.hoonsor.voicehub.Graph.settings.places))
+        val dest = place ?: said
         // 沒指定就用設定的預設交通方式（預設機車）
         val wanted = p.optString("mode").ifBlank { tw.hoonsor.voicehub.Graph.settings.navMode }
         val mode = when (wanted) {
@@ -212,7 +215,7 @@ class BuiltinActions(private val context: Context) {
             start(Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=${Uri.encode(dest)}")))
         }
         val how = mapOf("walking" to "走路", "bicycling" to "騎腳踏車", "transit" to "搭大眾運輸", "motorcycle" to "騎機車", "driving" to "開車")[wanted] ?: "開車"
-        return leaves("開始導航到 $dest（$how）")
+        return leaves(if (place != null) "開始導航到${Places.key(said)}（$place，$how）" else "開始導航到 $dest（$how）")
     }
 
     private fun webSearch(q: String): AgentResult {

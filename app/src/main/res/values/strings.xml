@@ -2,4 +2,6 @@
 <resources>
     <string name="settings_label">語音總控設定</string>
     <string name="tile_label">語音總控</string>
+    <string name="a11y_label">語音總控音量鍵</string>
+    <string name="a11y_description">讓音量鍵「加、減、加」在背景也能馬上叫出語音總控。只接收音量鍵，不讀取畫面內容，按鍵照常調整音量。</string>
 </resources>

@@ -65,6 +65,7 @@ import tw.hoonsor.voicehub.ai.LlmClient
 import tw.hoonsor.voicehub.ai.ProviderPolicy
 import androidx.compose.material3.Icon
 import tw.hoonsor.voicehub.assistant.AssistTileService
+import tw.hoonsor.voicehub.assistant.VolumeAccessibilityService
 import tw.hoonsor.voicehub.assistant.VolumeGestureService
 import tw.hoonsor.voicehub.voice.VolumePattern
 import tw.hoonsor.voicehub.data.Settings
@@ -562,6 +563,7 @@ private fun VolumeGestureCard() {
     val overlay = remember(tick) { SysSettings.canDrawOverlays(ctx) }
     val battery = remember(tick) { ctx.getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(ctx.packageName) }
     val assistant = remember(tick) { ctx.getSystemService(RoleManager::class.java).isRoleHeld(RoleManager.ROLE_ASSISTANT) }
+    val a11y = remember(tick) { VolumeAccessibilityService.isEnabledInSettings(ctx) }
 
     Card {
         ToggleRow("用音量鍵叫出語音總控", "會常駐一則「音量鍵待命中」通知；不錄音，只等音量變化", on) {
@@ -591,7 +593,16 @@ private fun VolumeGestureCard() {
             }
             Spacer(Modifier.height(6.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                StatusDot(if (assistant || overlay) true else false)
+                StatusDot(if (a11y) true else null)
+                Spacer(Modifier.size(8.dp))
+                Text(
+                    if (a11y) "無障礙服務已開啟：在桌面或其他 APP 裡按也能馬上叫出" else "無障礙服務未開啟：OPPO／ColorOS 在桌面按常常沒反應，建議開啟",
+                    color = C.text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f),
+                )
+            }
+            Spacer(Modifier.height(6.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                StatusDot(if (assistant || overlay || a11y) true else false)
                 Spacer(Modifier.size(8.dp))
                 Text(
                     when {
@@ -610,6 +621,9 @@ private fun VolumeGestureCard() {
             }
             Spacer(Modifier.height(8.dp))
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (!a11y) OutlineButton("開啟無障礙服務", primary = true) {
+                    ctx.startActivity(Intent(SysSettings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                }
                 if (!overlay) OutlineButton("允許上層顯示", primary = !assistant) {
                     ctx.startActivity(Intent(SysSettings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${ctx.packageName}")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                 }
@@ -624,7 +638,7 @@ private fun VolumeGestureCard() {
                     ctx.startActivity(Intent(SysSettings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${ctx.packageName}")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                 }
             }
-            Text("ColorOS 另外要：① 手機管家 › 權限隱私 › 自啟動管理，允許語音總控自啟動（否則重開機後要打開 APP 一次才會待命）；② 設定 › 應用程式 › 語音總控 › 權限，允許「背景彈出介面」（否則在桌面按了只會跳通知）。最穩的做法是把語音總控設為預設數位助理。", color = C.dim, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp))
+            Text("開啟無障礙服務：設定 › 無障礙 › 已下載的應用程式（或「已安裝的服務」）› 語音總控音量鍵 › 開啟。開關是灰色的話，到 應用程式資訊 › 右上角 ⋮ › 允許受限制的設定，再回來開。只接收音量鍵，不讀取畫面內容。ColorOS 也建議在 手機管家 › 權限隱私 › 自啟動管理 允許語音總控自啟動。", color = C.dim, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp))
 
             Row(Modifier.padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text("偵測紀錄", color = C.text, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))

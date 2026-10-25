@@ -132,6 +132,19 @@
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="使用者自訂的音量鍵手勢，用來從藍牙耳機或手機側鍵叫出語音助理" />
         </service>
+        <!-- 音量鍵手勢的無障礙服務（選用）：ColorOS 會延遲送廣播給背景 APP，無障礙服務不受影響 -->
+        <service
+            android:name=".assistant.VolumeAccessibilityService"
+            android:exported="false"
+            android:label="@string/a11y_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/volume_accessibility" />
+        </service>
         <receiver
             android:name=".assistant.VolumeGestureBootReceiver"
             android:exported="false">

@@ -13,6 +13,13 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.SET_ALARM" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <!-- 音量鍵手勢：常駐待命服務、開機恢復、從背景叫出對話畫面 -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <queries>
         <!-- 找出其他實作 Agent API 的 APP -->
@@ -115,6 +122,24 @@
                 android:name="android.service.quicksettings.ACTIVE_TILE"
                 android:value="false" />
         </service>
+
+        <!-- 音量鍵手勢待命（只等媒體音量改變的系統廣播，不錄音） -->
+        <service
+            android:name=".assistant.VolumeGestureService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="使用者自訂的音量鍵手勢，用來從藍牙耳機或手機側鍵叫出語音助理" />
+        </service>
+        <receiver
+            android:name=".assistant.VolumeGestureBootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
 
         <!-- 本 APP 自己的 Agent API（內建系統動作），其他 APP 也能呼叫 -->
         <provider

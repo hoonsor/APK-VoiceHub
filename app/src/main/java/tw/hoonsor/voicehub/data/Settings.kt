@@ -73,6 +73,14 @@ class Settings(context: Context) {
     var ttsVoice: String?
         get() = p.getString("ttsVoice", null)
         set(v) = p.edit().putString("ttsVoice", v).apply()
+    /** 音量鍵手勢叫出（常駐待命服務） */
+    var volumeGesture: Boolean
+        get() = p.getBoolean("volumeGesture", false)
+        set(v) = p.edit().putBoolean("volumeGesture", v).apply()
+    /** VolumePattern 名稱 */
+    var volumePattern: String
+        get() = p.getString("volumePattern", "UP_DOWN_UP") ?: "UP_DOWN_UP"
+        set(v) = p.edit().putString("volumePattern", v).apply()
     /** 回覆後自動再聽（連續對話） */
     var autoListen: Boolean
         get() = p.getBoolean("autoListen", false)

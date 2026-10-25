@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import tw.hoonsor.voicehub.BuildConfig
 import tw.hoonsor.voicehub.assistant.AssistantActivity
+import tw.hoonsor.voicehub.assistant.VolumeGestureService
 import tw.hoonsor.voicehub.ui.theme.C
 import tw.hoonsor.voicehub.ui.theme.VoiceHubTheme
 
@@ -44,6 +45,7 @@ import tw.hoonsor.voicehub.ui.theme.VoiceHubTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        VolumeGestureService.sync(this)
         enableEdgeToEdge(SystemBarStyle.dark(android.graphics.Color.TRANSPARENT), SystemBarStyle.dark(android.graphics.Color.TRANSPARENT))
         setContent {
             VoiceHubTheme {

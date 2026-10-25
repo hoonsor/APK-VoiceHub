@@ -10,6 +10,7 @@ import android.content.pm.PackageManager
 import android.graphics.drawable.Icon as AndroidIcon
 import android.net.Uri
 import android.os.Build
+import android.os.PowerManager
 import android.provider.Settings as SysSettings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -64,6 +65,8 @@ import tw.hoonsor.voicehub.ai.LlmClient
 import tw.hoonsor.voicehub.ai.ProviderPolicy
 import androidx.compose.material3.Icon
 import tw.hoonsor.voicehub.assistant.AssistTileService
+import tw.hoonsor.voicehub.assistant.VolumeGestureService
+import tw.hoonsor.voicehub.voice.VolumePattern
 import tw.hoonsor.voicehub.data.Settings
 import tw.hoonsor.voicehub.data.SttEngine
 import tw.hoonsor.voicehub.ui.theme.C
@@ -522,6 +525,9 @@ fun SettingsScreen() {
             ToggleRow("跳到其他 APP 後自動關閉", "例如開啟 LINE、導航後收起對話視窗", autoClose) { autoClose = it }
         }
 
+        SectionTitle("音量鍵叫出（藍牙耳機也可以）")
+        VolumeGestureCard()
+
         Row(verticalAlignment = Alignment.CenterVertically) {
             OutlineButton("儲存", icon = Glyph.Check, primary = true) { save() }
             Spacer(Modifier.size(10.dp))
@@ -531,6 +537,101 @@ fun SettingsScreen() {
             "API key 以 Android Keystore 加密存在手機上，不會進入系統備份。指令內容會送到上面設定的 AI 服務，請勿用語音處理公務或個資。",
             color = C.dim, style = MaterialTheme.typography.bodyMedium,
         )
+    }
+}
+
+/**
+ * 音量鍵手勢：開關、按法、需要的權限、偵測紀錄。選了立刻生效，不用按儲存。
+ * 偵測紀錄用來確認耳機按音量時手機有沒有收到（有些耳機的音量只在耳機內部調整，手機收不到）。
+ */
+@Composable
+private fun VolumeGestureCard() {
+    val ctx = LocalContext.current
+    val s = Graph.settings
+    var tick by remember { mutableIntStateOf(0) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { tick++ }
+    var on by remember { mutableStateOf(s.volumeGesture) }
+    var pattern by remember { mutableStateOf(s.volumePattern) }
+    val running by VolumeGestureService.isRunning.collectAsStateWithLifecycle()
+    val events by VolumeGestureService.events.collectAsStateWithLifecycle()
+    val askNotify = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { tick++ }
+    val overlay = remember(tick) { SysSettings.canDrawOverlays(ctx) }
+    val battery = remember(tick) { ctx.getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(ctx.packageName) }
+    val assistant = remember(tick) { ctx.getSystemService(RoleManager::class.java).isRoleHeld(RoleManager.ROLE_ASSISTANT) }
+
+    Card {
+        ToggleRow("用音量鍵叫出語音總控", "會常駐一則「音量鍵待命中」通知；不錄音，只等音量變化", on) {
+            on = it
+            s.volumeGesture = it
+            if (it && Build.VERSION.SDK_INT >= 33 && ctx.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                askNotify.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+            VolumeGestureService.sync(ctx)
+        }
+        Text("按法（3 下要在 2 秒內按完）", color = C.text, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 6.dp, bottom = 8.dp))
+        ChipRow(VolumePattern.entries.map { it.name to it.label }, pattern) {
+            pattern = it
+            s.volumePattern = it
+            VolumeGestureService.sync(ctx)
+        }
+        Text(
+            "「加、減、加」最不容易誤觸，按完音量會自動調回原本的值。音量已經最大時按「加」不會有變化，請先調小一格再按；「連按 3 下」在平常快速調音量時也會觸發。手機側邊的音量鍵也有效；螢幕鎖定時不會叫出。",
+            color = C.muted, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp),
+        )
+        if (on) {
+            Spacer(Modifier.height(10.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                StatusDot(running)
+                Spacer(Modifier.size(8.dp))
+                Text(if (running) "待命中" else "沒有在待命（打開 APP 會自動重新啟動）", color = C.text, style = MaterialTheme.typography.bodyMedium)
+            }
+            Spacer(Modifier.height(6.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                StatusDot(if (assistant || overlay) true else false)
+                Spacer(Modifier.size(8.dp))
+                Text(
+                    when {
+                        assistant -> "已是預設數位助理：可以直接跳出對話畫面"
+                        overlay -> "已允許顯示在其他應用程式上層：可以直接跳出對話畫面"
+                        else -> "缺少「顯示在其他應用程式上層」：只會發通知讓你點"
+                    },
+                    color = C.text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f),
+                )
+            }
+            Spacer(Modifier.height(6.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                StatusDot(battery)
+                Spacer(Modifier.size(8.dp))
+                Text(if (battery) "電池不限制：ColorOS 不會把待命關掉" else "電池最佳化中：ColorOS 可能把待命關掉", color = C.text, style = MaterialTheme.typography.bodyMedium)
+            }
+            Spacer(Modifier.height(8.dp))
+            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (!overlay) OutlineButton("允許上層顯示", primary = !assistant) {
+                    ctx.startActivity(Intent(SysSettings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${ctx.packageName}")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                }
+                if (!battery) OutlineButton("電池不限制") {
+                    runCatching {
+                        ctx.startActivity(Intent(SysSettings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:${ctx.packageName}")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                    }.onFailure {
+                        ctx.startActivity(Intent(SysSettings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${ctx.packageName}")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                    }
+                }
+                OutlineButton("應用程式資訊") {
+                    ctx.startActivity(Intent(SysSettings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${ctx.packageName}")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                }
+            }
+            Text("ColorOS 另外要在 手機管家 › 權限隱私 › 自啟動管理 允許語音總控自啟動，否則重開機後要打開 APP 一次才會待命。", color = C.dim, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp))
+
+            Row(Modifier.padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("偵測紀錄", color = C.text, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                if (events.isNotEmpty()) OutlineButton("清除") { VolumeGestureService.clearLog() }
+            }
+            Text(
+                if (events.isEmpty()) "還沒有紀錄。按耳機或手機的音量鍵，這裡應該會出現「音量 5 → 6」；耳機按了沒有出現，表示這副耳機的音量手機收不到，就不能用這個功能。"
+                else events.joinToString("\n"),
+                color = if (events.isEmpty()) C.dim else C.muted, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp),
+            )
+        }
     }
 }
 

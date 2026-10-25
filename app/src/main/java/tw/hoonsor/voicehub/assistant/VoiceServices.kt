@@ -12,8 +12,24 @@ import android.service.voice.VoiceInteractionSessionService
 import android.speech.RecognitionService
 import android.speech.SpeechRecognizer
 
-/** 系統「預設數位助理」的入口；本身不做事，只負責開 session */
-class VoiceService : VoiceInteractionService()
+/** 系統「預設數位助理」的入口；本身不做事，只負責開 session。音量鍵手勢會透過 [instance] 叫出 */
+class VoiceService : VoiceInteractionService() {
+    override fun onReady() {
+        super.onReady()
+        instance = this
+    }
+
+    override fun onShutdown() {
+        instance = null
+        super.onShutdown()
+    }
+
+    companion object {
+        /** 是預設數位助理且系統已連上時才有值 */
+        @Volatile var instance: VoiceService? = null
+            private set
+    }
+}
 
 class VoiceSessionService : VoiceInteractionSessionService() {
     override fun onNewSession(args: Bundle?): VoiceInteractionSession = AssistSession(this)

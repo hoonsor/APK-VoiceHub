@@ -11,12 +11,18 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ServiceInfo
+import android.graphics.PixelFormat
 import android.media.AudioManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.os.IBinder
 import android.os.SystemClock
 import android.provider.Settings as SysSettings
+import android.view.Gravity
+import android.view.View
+import android.view.WindowManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -38,6 +44,7 @@ class VolumeGestureService : Service() {
     private var detector = VolumeGestureDetector(VolumePattern.UP_DOWN_UP)
     /** 自己還原音量時會再收到廣播，這段時間內忽略 */
     private var ignoreUntil = 0L
+    private val main = Handler(Looper.getMainLooper())
 
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -94,28 +101,59 @@ class VolumeGestureService : Service() {
 
     /**
      * 叫出對話畫面。是預設數位助理時走系統助理通道（不受背景啟動限制）；
-     * 否則直接開畫面，需要「顯示在其他應用程式上層」權限，沒有就改發通知讓倬點。
+     * 否則用「顯示在其他應用程式上層」權限開畫面。Android 15 起光有權限不夠，
+     * 還必須真的有一個看得見的上層視窗，所以先放一個 1 像素的透明視窗再開，開完拿掉。
+     * 1.5 秒內畫面沒出現（被系統或 ColorOS 擋下）就改發通知讓倬點。
      */
     private fun launch(): String {
         VoiceService.instance?.let { vis ->
             if (runCatching { vis.showSession(Bundle(), 0) }.isSuccess) return "數位助理通道"
         }
-        if (SysSettings.canDrawOverlays(this)) {
-            startActivity(Intent(this, AssistantActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-            return "直接開啟"
+        if (!SysSettings.canDrawOverlays(this)) {
+            tapNotification("沒有「顯示在其他應用程式上層」權限，無法直接跳出（設定頁可開啟）")
+            return "缺少上層顯示權限，改發通知"
         }
+        val wm = getSystemService(WindowManager::class.java)
+        val pixel = View(this)
+        val added = runCatching {
+            wm.addView(
+                pixel,
+                WindowManager.LayoutParams(
+                    1, 1, WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+                    PixelFormat.TRANSLUCENT,
+                ).apply { gravity = Gravity.TOP or Gravity.START },
+            )
+        }.isSuccess
+        val requestedAt = SystemClock.elapsedRealtime()
+        // 等透明視窗真的畫出來再開（太早開，系統還不認得它是看得見的視窗）
+        main.postDelayed({
+            runCatching { startActivity(Intent(this, AssistantActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                .onFailure { log("開啟對話畫面失敗：${it.javaClass.simpleName}") }
+        }, 120)
+        main.postDelayed({
+            if (added) runCatching { wm.removeView(pixel) }
+            if (AssistantActivity.lastResumedAt < requestedAt) {
+                log("對話畫面沒有出現（被系統擋下），改發通知")
+                tapNotification("系統擋下了直接跳出：ColorOS 請到 應用程式 › 語音總控 › 權限 允許「背景彈出介面」")
+            }
+        }, 1500)
+        return if (added) "上層視窗開啟" else "上層視窗建立失敗，仍嘗試開啟"
+    }
+
+    private fun tapNotification(reason: String) {
         getSystemService(NotificationManager::class.java).notify(
             TAP_ID,
             Notification.Builder(this, CHANNEL_ALERT)
                 .setSmallIcon(R.drawable.ic_tile)
                 .setContentTitle("點這裡開始對話")
-                .setContentText("沒有「顯示在其他應用程式上層」權限，無法直接跳出（健康檢查頁可開啟）")
+                .setContentText(reason)
+                .setStyle(Notification.BigTextStyle().bigText(reason))
                 .setContentIntent(openAssistant())
                 .setAutoCancel(true)
                 .setTimeoutAfter(15_000)
                 .build(),
         )
-        return "缺少上層顯示權限，改發通知"
     }
 
     private fun openAssistant() = PendingIntent.getActivity(
@@ -125,7 +163,8 @@ class VolumeGestureService : Service() {
 
     private fun notification(): Notification {
         val nm = getSystemService(NotificationManager::class.java)
-        nm.createNotificationChannel(NotificationChannel(CHANNEL_IDLE, "音量鍵待命", NotificationManager.IMPORTANCE_MIN).apply {
+        nm.deleteNotificationChannel("volume_gesture") // v0.3.0 的最低優先度類別，ColorOS 會藏到看不到
+        nm.createNotificationChannel(NotificationChannel(CHANNEL_IDLE, "音量鍵待命", NotificationManager.IMPORTANCE_LOW).apply {
             description = "音量鍵手勢需要的常駐通知，可以在系統設定把這個類別收起來"
             setShowBadge(false)
         })
@@ -145,7 +184,7 @@ class VolumeGestureService : Service() {
         private const val EXTRA_STREAM = "android.media.EXTRA_VOLUME_STREAM_TYPE"
         private const val EXTRA_VALUE = "android.media.EXTRA_VOLUME_STREAM_VALUE"
         private const val EXTRA_PREV = "android.media.EXTRA_PREV_VOLUME_STREAM_VALUE"
-        private const val CHANNEL_IDLE = "volume_gesture"
+        private const val CHANNEL_IDLE = "volume_gesture_idle"
         private const val CHANNEL_ALERT = "volume_gesture_alert"
         private const val NOTIFY_ID = 41
         private const val TAP_ID = 42

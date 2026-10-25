@@ -73,7 +73,15 @@ class AssistantActivity : ComponentActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        lastResumedAt = android.os.SystemClock.elapsedRealtime()
+    }
+
     companion object {
+        /** 音量鍵手勢用來判斷畫面有沒有真的跳出來 */
+        @Volatile var lastResumedAt = 0L
+            private set
         const val EXTRA_TEXT = "text"
         const val EXTRA_DRAFT = "draft"
     }

@@ -624,7 +624,7 @@ private fun VolumeGestureCard() {
                     ctx.startActivity(Intent(SysSettings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${ctx.packageName}")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                 }
             }
-            Text("ColorOS 另外要在 手機管家 › 權限隱私 › 自啟動管理 允許語音總控自啟動，否則重開機後要打開 APP 一次才會待命。", color = C.dim, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp))
+            Text("ColorOS 另外要：① 手機管家 › 權限隱私 › 自啟動管理，允許語音總控自啟動（否則重開機後要打開 APP 一次才會待命）；② 設定 › 應用程式 › 語音總控 › 權限，允許「背景彈出介面」（否則在桌面按了只會跳通知）。最穩的做法是把語音總控設為預設數位助理。", color = C.dim, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp))
 
             Row(Modifier.padding(top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text("偵測紀錄", color = C.text, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))

@@ -7,14 +7,16 @@
 
 大腦端行為摘要：打開對話畫面時並行呼叫各 APP 的 describe（各 5 秒逾時），動作清單原樣放進 AI 提示詞（deprecated 的不放）；倬自己的 APP 優先於系統動作；summary 與 error.message 直接唸出。
 
+鬧鐘與計時器（`AlarmRouting`，AlarmRoutingTest）：倬的鬧鐘（com.hoonsor.alarm）有 Agent API 時，AI 或離線句型產生的 `alarm_set`／`timer_set` 一律改送它的 `alarm_create`／`timer_start`。預設一次性：不帶 `auto_delete`（交給 APP 預設值）；倬明確說「固定、重複、常駐、保留、響完不要刪」才帶 `auto_delete: false`，AI 帶錯也會依原話修正。退回系統時鐘時 summary 補一句「響完不會自動刪除」的提醒。
+
 ## 內建動作（target＝本 APP 套件名）
 
 | 動作 | risk | 參數 | 範例句 | 回傳 data | 狀態 |
 |---|---|---|---|---|---|
 | app_list | read | query? | 我手機有哪些 APP | apps[]、total | 已實作 |
 | app_open | reversible | name | 打開 LINE | package、leavesApp；同名多個回 AMBIGUOUS | 已實作 |
-| alarm_set | reversible | hour, minute, label?, days?[1=週一…7=週日] | 明天早上七點叫我 | — | 已實作（交給預設時鐘 APP） |
-| timer_set | reversible | seconds, label? | 計時五分鐘 | — | 已實作 |
+| alarm_set | reversible | hour, minute, label?, days?[1=週一…7=週日] | 明天早上七點叫我 | — | 已實作（交給預設時鐘 APP；有倬的鬧鐘時改送 alarm_create） |
+| timer_set | reversible | seconds, label? | 計時五分鐘 | — | 已實作（有倬的鬧鐘時改送 timer_start） |
 | phone_dial | reversible | number? / contact? | 打電話給媽媽 | leavesApp | 已實作（開撥號畫面） |
 | sms_draft | reversible | to?, body | 傳簡訊跟老婆說我晚點到 | leavesApp | 已實作（開簡訊草稿） |
 | map_navigate | reversible | destination, mode? | 導航到台北車站 | leavesApp | 已實作 |

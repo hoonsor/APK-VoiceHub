@@ -32,7 +32,7 @@ object BuiltinCatalog {
             listOf("打開 LINE", "開相機", "幫我開 YouTube"),
         ),
         ActionSpec(
-            "alarm_set", "設定鬧鐘（系統時鐘）", "用系統時鐘 APP 新增鬧鐘，不跳畫面。", Risk.REVERSIBLE,
+            "alarm_set", "設定鬧鐘（系統時鐘）", "用系統時鐘 APP 新增鬧鐘，不跳畫面；響完不會自動刪除。有「倬的鬧鐘」時改用它的 alarm_create。", Risk.REVERSIBLE,
             obj(
                 "hour" to int("時（0-23）", 0, 23),
                 "minute" to int("分（0-59）", 0, 59),
@@ -43,7 +43,7 @@ object BuiltinCatalog {
             listOf("明天早上七點叫我", "設一個六點半的鬧鐘叫運動", "平日早上七點十分的鬧鐘"),
         ),
         ActionSpec(
-            "timer_set", "設定計時器（系統時鐘）", "用系統時鐘 APP 開始倒數計時，不跳畫面。", Risk.REVERSIBLE,
+            "timer_set", "設定計時器（系統時鐘）", "用系統時鐘 APP 開始倒數計時，不跳畫面；沒辦法設成響完自動刪除。有「倬的鬧鐘」時改用它的 timer_start。", Risk.REVERSIBLE,
             obj(
                 "seconds" to int("倒數秒數", 1, 86_400),
                 "label" to str("計時器名稱，可省略"),

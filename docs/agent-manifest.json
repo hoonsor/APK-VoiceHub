@@ -48,7 +48,7 @@
         "平日早上七點十分的鬧鐘"
       ],
       "name": "alarm_set",
-      "description": "用系統時鐘 APP 新增鬧鐘，不跳畫面。",
+      "description": "用系統時鐘 APP 新增鬧鐘，不跳畫面；響完不會自動刪除。有「倬的鬧鐘」時改用它的 alarm_create。",
       "risk": "reversible",
       "title": "設定鬧鐘（系統時鐘）",
       "params": {
@@ -88,7 +88,7 @@
         "三分鐘後提醒我泡麵好了"
       ],
       "name": "timer_set",
-      "description": "用系統時鐘 APP 開始倒數計時，不跳畫面。",
+      "description": "用系統時鐘 APP 開始倒數計時，不跳畫面；沒辦法設成響完自動刪除。有「倬的鬧鐘」時改用它的 timer_start。",
       "risk": "reversible",
       "title": "設定計時器（系統時鐘）",
       "params": {

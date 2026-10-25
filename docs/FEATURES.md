@@ -15,7 +15,7 @@
 | F08 | 做不到時明說原因（AI 規則＋動作錯誤碼轉口語） | P0 | — | v0.1.0 | 2026-10-17 |
 | F09 | 控制倬自己的 APP：自動探索 Hoonsor Agent API（describe／execute／health） | P0 | 依各 APP | v0.1.0（各 APP 尚未實作 API） | 2026-10-17 |
 | F10 | 開啟任一 APP（名稱模糊比對、同名候選詢問） | P0 | app_open、app_list | v0.1.0 | 2026-10-17 |
-| F11 | 系統時鐘鬧鐘／計時器 | P0 | alarm_set、timer_set | v0.1.0 | 2026-10-17 |
+| F11 | 系統時鐘鬧鐘／計時器；有倬的鬧鐘時自動改交給它、預設一次性（v0.3.1） | P0 | alarm_set、timer_set | v0.1.0 | 2026-10-17 |
 | F12 | 撥號、簡訊草稿（由倬按送出） | P0 | phone_dial、sms_draft | v0.1.0 | 2026-10-17 |
 | F13 | 導航、網路搜尋、開網址 | P0 | map_navigate、web_search、url_open | v0.1.0 | 2026-10-17 |
 | F14 | 手電筒、音量、媒體播放控制、開系統設定頁、電量 | P0 | flashlight_set、volume_set、media_control、settings_open、battery_status | v0.1.0 | 2026-10-17 |

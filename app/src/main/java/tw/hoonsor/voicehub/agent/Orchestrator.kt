@@ -109,6 +109,7 @@ class Orchestrator(
             onEvent(Event.Notice("AI 連不上，改用離線模式"))
             Plan("", listOf(PlannedCall(registry.selfPackage, call.action, call.params)))
         }
+        plan = adjusted(plan, utterance)
 
         var leaves = false
         var round = 0
@@ -120,7 +121,10 @@ class Orchestrator(
             onEvent(Event.PhaseChanged(Phase.EXECUTING))
             val results = mutableListOf<Pair<PlannedCall, AgentResult>>()
             for (call in plan.calls) {
-                val r = registry.execute(call.target, call.action, call.params, utterance = utterance)
+                val r = registry.execute(call.target, call.action, call.params, utterance = utterance).let { r ->
+                    val note = if (r.ok) AlarmRouting.fallbackNote(call.action, registry.resolve(call.target, call.action)?.builtin == true, utterance) else null
+                    if (note == null) r else r.copy(summary = r.summary.ifBlank { "${titleOf(call)}完成" } + "；" + note)
+                }
                 onEvent(Event.ActionDone(titleOf(call), r))
                 results += call to r
                 if (r.data?.optBoolean("leavesApp") == true) leaves = true
@@ -151,13 +155,17 @@ class Orchestrator(
             plan = try {
                 val raw = complete(messages)
                 messages += ChatMessage("assistant", raw)
-                Planner.parsePlan(raw)
+                adjusted(Planner.parsePlan(raw), utterance)
             } catch (e: Exception) {
                 return remember(utterance, Reply(localSummary(results), leaves))
             }
             round++
         }
     }
+
+    /** 鬧鐘／計時改送倬的鬧鐘、套用一次性規則（AlarmRouting） */
+    private fun adjusted(plan: Plan, utterance: String): Plan =
+        plan.copy(calls = plan.calls.map { AlarmRouting.adjust(it, registry.catalogs.value, utterance) })
 
     /** 不經 AI 直接執行一個內建動作，回覆就是動作的 summary（派工時＝伺服器的 message） */
     private suspend fun runDirect(utterance: String, action: String, params: JSONObject, onEvent: (Event) -> Unit): Reply {

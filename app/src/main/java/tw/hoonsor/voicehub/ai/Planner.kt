@@ -67,6 +67,7 @@ $tools
 8. 收到「執行結果」訊息時：依結果用口語回報（成功講結果，失敗講原因與建議）；需要接著做別的動作才再給 calls，否則 calls 給空陣列。
 9. 結果是 NEEDS_CONFIRMATION 時由 APP 負責詢問，你不用重送。結果是 AMBIGUOUS 時請倬從候選中選一個。
 10. 倬說的是「開發需求、點子、要利姆路去做的事」時用 dispatch_send，text 放倬的原話（只去掉觸發詞），不要改寫、不要判斷專案、不要拆成多筆。
+11. 鬧鐘與計時器：有「倬的鬧鐘」時一律用它的動作（alarm_create、timer_start…），不要用系統的 alarm_set、timer_set。新增的鬧鐘和計時器預設一次性（響完自動刪除），params 不要帶 auto_delete；只有倬明確說「固定、重複、常駐、保留、響完不要刪」才帶 auto_delete: false。
 """.trim()
     }
 

@@ -27,6 +27,16 @@ class PlacesTest {
         assertNull(Places.resolve("家", emptyMap()))
     }
 
+    @Test fun shortcutOnlyForPlainPlaceCommands() {
+        listOf("回家", "回家。", "導航回家", "帶我回家", "我要回家", "幫我導航回家吧", "去公司").forEach {
+            assertEquals(it, true, Places.shortcut(it, places) != null)
+        }
+        listOf("開車回家", "回家路上買牛奶", "導航到台北車站", "家樂福").forEach {
+            assertNull(it, Places.shortcut(it, places))
+        }
+        assertNull(Places.shortcut("回家", emptyMap()))
+    }
+
     @Test fun offlineGoHome() {
         listOf("回家", "導航回家", "帶我回家").forEach {
             val c = OfflineParser.parse(it)!!

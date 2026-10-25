@@ -91,6 +91,11 @@ class Orchestrator(
             return runDirect(utterance, "dispatch_send", JSONObject().put("text", text), onEvent)
         }
 
+        // 「回家」這類常用地點不用問 AI，直接導航（省掉一次 AI 往返）
+        Places.shortcut(utterance, Places.parse(settings.places))?.let { name ->
+            return runDirect(utterance, "map_navigate", JSONObject().put("destination", name), onEvent)
+        }
+
         onEvent(Event.PhaseChanged(Phase.THINKING))
         val messages = mutableListOf(ChatMessage("system", Planner.systemPrompt(registry.catalogs.value, LocalDateTime.now(), Places.parse(settings.places).keys)))
         messages += history
@@ -173,7 +178,7 @@ class Orchestrator(
         val call = PlannedCall(registry.selfPackage, action, params)
         val r = registry.execute(call.target, action, params, utterance = utterance)
         onEvent(Event.ActionDone(titleOf(call), r))
-        return remember(utterance, Reply(localSummary(listOf(call to r))))
+        return remember(utterance, Reply(localSummary(listOf(call to r)), r.data?.optBoolean("leavesApp") == true))
     }
 
     private suspend fun confirm(p: Pending, onEvent: (Event) -> Unit): Reply {

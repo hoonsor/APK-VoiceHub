@@ -85,6 +85,10 @@ class Settings(context: Context) {
     var volumePattern: String
         get() = p.getString("volumePattern", "UP_DOWN_UP") ?: "UP_DOWN_UP"
         set(v) = p.edit().putString("volumePattern", v).apply()
+    /** VolumeSpeed 名稱：3 下要多快按完 */
+    var volumeSpeed: String
+        get() = p.getString("volumeSpeed", "FAST") ?: "FAST"
+        set(v) = p.edit().putString("volumeSpeed", v).apply()
     /** 回覆後自動再聽（連續對話） */
     var autoListen: Boolean
         get() = p.getBoolean("autoListen", false)

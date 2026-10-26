@@ -31,6 +31,7 @@ import tw.hoonsor.voicehub.Graph
 import tw.hoonsor.voicehub.R
 import tw.hoonsor.voicehub.voice.VolumeGestureDetector
 import tw.hoonsor.voicehub.voice.VolumePattern
+import tw.hoonsor.voicehub.voice.VolumeSpeed
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -42,7 +43,7 @@ import java.util.Locale
  */
 class VolumeGestureCore(private val ctx: Context, private val source: String) {
     private val audio = ctx.getSystemService(AudioManager::class.java)
-    private var detector = VolumeGestureDetector(VolumePattern.of(Graph.settings.volumePattern))
+    private var detector = newDetector()
     /** 自己還原音量時會再收到廣播，這段時間內忽略 */
     private var ignoreUntil = 0L
     /** 同一次按鍵會同時收到按鍵事件和音量廣播，有按鍵事件時忽略緊接著的廣播 */
@@ -59,8 +60,11 @@ class VolumeGestureCore(private val ctx: Context, private val source: String) {
             val before = intent.getIntExtra(EXTRA_PREV, -1)
             if (after < 0 || before < 0 || after == before) return
             val now = SystemClock.elapsedRealtime()
-            if (now < ignoreUntil || now - lastKeyAt < 700) return
-            handle(before, after, now, "音量 $before → $after")
+            if (now < ignoreUntil || now - lastKeyAt < 700) {
+                detector.sync(after)
+                return
+            }
+            handle(before, after, now, "音量 $before → $after", observed = true)
         }
     }
 
@@ -68,6 +72,7 @@ class VolumeGestureCore(private val ctx: Context, private val source: String) {
         // 系統送的廣播，不需要對其他 APP 開放
         val filter = IntentFilter(ACTION_VOLUME_CHANGED)
         if (Build.VERSION.SDK_INT >= 33) ctx.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED) else ctx.registerReceiver(receiver, filter)
+        detector.sync(audio.getStreamVolume(AudioManager.STREAM_MUSIC))
     }
 
     fun unregister() {
@@ -75,8 +80,10 @@ class VolumeGestureCore(private val ctx: Context, private val source: String) {
     }
 
     fun reload() {
-        detector = VolumeGestureDetector(VolumePattern.of(Graph.settings.volumePattern))
+        detector = newDetector().also { it.sync(audio.getStreamVolume(AudioManager.STREAM_MUSIC)) }
     }
+
+    private fun newDetector() = VolumeGestureDetector(VolumePattern.of(Graph.settings.volumePattern), VolumeSpeed.of(Graph.settings.volumeSpeed))
 
     /** 無障礙服務收到實體音量鍵（按下那一刻，音量還沒變）；dir：+1 加、-1 減，eventTime 是 KeyEvent 的 uptimeMillis */
     fun onKey(dir: Int, eventTime: Long) {
@@ -90,8 +97,8 @@ class VolumeGestureCore(private val ctx: Context, private val source: String) {
         handle(before, before + dir, at, "按鍵${if (dir > 0) "加" else "減"}（音量 $before）")
     }
 
-    private fun handle(before: Int, after: Int, at: Long, what: String) {
-        val original = detector.feed(before, after, at)
+    private fun handle(before: Int, after: Int, at: Long, what: String, observed: Boolean = false) {
+        val original = if (observed) detector.feedObserved(before, after, at) else detector.feed(before, after, at)
         if (original == null) {
             VolumeGestureService.log("[$source] $what")
             return
@@ -102,7 +109,10 @@ class VolumeGestureCore(private val ctx: Context, private val source: String) {
         }
         ignoreUntil = SystemClock.elapsedRealtime() + 1000
         // 按鍵事件比音量變化早到，等系統把最後一下套用完再還原
-        main.postDelayed({ runCatching { audio.setStreamVolume(AudioManager.STREAM_MUSIC, original, 0) } }, 250)
+        main.postDelayed({
+            runCatching { audio.setStreamVolume(AudioManager.STREAM_MUSIC, original, 0) }
+            detector.sync(original)
+        }, 250)
         VolumeGestureService.log("[$source] $what：按法正確，叫出語音總控（${launch()}）")
     }
 

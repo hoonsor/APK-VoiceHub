@@ -68,6 +68,7 @@ import tw.hoonsor.voicehub.assistant.AssistTileService
 import tw.hoonsor.voicehub.assistant.VolumeAccessibilityService
 import tw.hoonsor.voicehub.assistant.VolumeGestureService
 import tw.hoonsor.voicehub.voice.VolumePattern
+import tw.hoonsor.voicehub.voice.VolumeSpeed
 import tw.hoonsor.voicehub.data.Settings
 import tw.hoonsor.voicehub.data.SttEngine
 import tw.hoonsor.voicehub.ui.theme.C
@@ -574,12 +575,20 @@ private fun VolumeGestureCard() {
             }
             VolumeGestureService.sync(ctx)
         }
-        Text("按法（3 下要在 2 秒內按完）", color = C.text, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 6.dp, bottom = 8.dp))
+        Text("按法", color = C.text, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 6.dp, bottom = 8.dp))
         ChipRow(VolumePattern.entries.map { it.name to it.label }, pattern) {
             pattern = it
             s.volumePattern = it
             VolumeGestureService.sync(ctx)
         }
+        Text("按的速度", color = C.text, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 10.dp, bottom = 8.dp))
+        var speed by remember { mutableStateOf(s.volumeSpeed) }
+        ChipRow(VolumeSpeed.entries.map { it.name to it.label }, speed) {
+            speed = it
+            s.volumeSpeed = it
+            VolumeGestureService.sync(ctx)
+        }
+        Text("用藍牙耳機請選「慢」，並且每一下間隔約 1 秒、不要按太快：OPPO 會把耳機的音量變化延遲送到，按太快時中間幾下會被合併。", color = C.muted, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 6.dp))
         Text(
             "「加、減、加」最不容易誤觸，按完音量會自動調回原本的值。音量已經最大時按「加」不會有變化，請先調小一格再按；「連按 3 下」在平常快速調音量時也會觸發。手機側邊的音量鍵也有效；螢幕鎖定時不會叫出。",
             color = C.muted, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp),

@@ -25,16 +25,30 @@ object DispatchTrigger {
         "我有個點子", "我有一個點子", "有個點子",
         "跟利姆路說", "告訴利姆路", "叫利姆路", "利姆路",
     )
+    /** 專案規劃的觸發詞（長的放前面）；送出時 text 加 [PLANNING_PREFIX]，後端靠前綴分辨，不另加欄位 */
+    private val planningTriggers = listOf("規劃一個新專案", "規劃新專案", "規劃專案", "專案規劃")
+    const val PLANNING_PREFIX = "【專案規劃】"
+
     private val leading = Regex("^[\\s，。、,.:：；;!！?？～~-]+")
     private val politePrefix = Regex("^(請|麻煩|嘿|欸|喂)[\\s，,、]*")
 
-    /** 是派工指令就回傳要送出的原文（可能是空字串＝只講了觸發詞）；不是派工回 null */
-    fun extract(utterance: String): String? {
+    /** [text] 是觸發詞之後的原話（可能是空字串＝只講了觸發詞）；[planning] 是「專案規劃」 */
+    data class Request(val text: String, val planning: Boolean) {
+        /** 要送出的 text：專案規劃加前綴，其餘原樣 */
+        val payload: String get() = if (planning) PLANNING_PREFIX + text else text
+    }
+
+    /** 是派工或專案規劃就回傳 [Request]；都不是回 null */
+    fun parse(utterance: String): Request? {
         var t = utterance.trim().replace(leading, "")
         t = t.replace(politePrefix, "")
-        val trigger = triggers.firstOrNull { t.startsWith(it) } ?: return null
-        return t.substring(trigger.length).replace(leading, "").trim()
+        val planning = planningTriggers.firstOrNull { t.startsWith(it) }
+        val trigger = planning ?: triggers.firstOrNull { t.startsWith(it) } ?: return null
+        return Request(t.substring(trigger.length).replace(leading, "").trim(), planning != null)
     }
+
+    /** 回傳要送出的 text（只講了觸發詞時是空字串）；不是派工回 null */
+    fun extract(utterance: String): String? = parse(utterance)?.let { if (it.text.isEmpty()) "" else it.payload }
 
     private val statusWords = Regex("狀態|進度|做好|好了沒|好了嗎|怎麼樣|做到哪|處理了沒")
     private val ticketNo = Regex("([0-9]+|[零〇一二兩三四五六七八九十百]+)\\s*號")

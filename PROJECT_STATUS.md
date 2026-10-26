@@ -1,6 +1,6 @@
 # PROJECT_STATUS — 語音總控（APK-VoiceHub）
 
-- 目前版本：v0.4.1（main 推送後由 CI 發佈 latest；使用說明書已在模擬器驗證）
+- 目前版本：v0.5.0（main 推送後由 CI 發佈 latest；使用說明書已在模擬器驗證）
 - 程式碼：`D:\dev\APK-VoiceHub`；專案資料夾 `D:\01-Project\42-語音總控制APP`（CODE_LOCATION.txt 指過來）
 - 套件：`tw.hoonsor.voicehub`（LAB：`tw.hoonsor.voicehub.lab`）
 
@@ -20,6 +20,7 @@
 - [x] 倬在電腦 A 執行 setup-hoonsor-signing.ps1 產生 hoonsor-release.jks 並寫入 Secrets（2026-10-18，latest 已驗證為共用簽章）
 - [x] 使用說明書分頁 F30（v0.2.0）：docs/manual/MANUAL.md 唯一來源、搜尋、點例句帶入、即時狀態、ManualTest、每日收錄檢查 manual_coverage_check.py
 - [x] 協定唯一來源 AGENT_PROTOCOL.md、共用 SDK HoonsorAgent.kt、CI 相容檢查、deprecated 支援
+- [x] 專案規劃觸發詞（v0.5.0）：「專案規劃」等觸發詞送出時加 `【專案規劃】` 前綴，後端照技能 hoonsor-project-planning 建專案＋開 Remote Control
 - [ ] 實機驗證（見下方清單）
 - [ ] Claude Design 版面方案比較（SOP 第 3 階段，事後補）
 - [ ] 備份四件套（F23）
@@ -28,6 +29,7 @@
 ## 版本歷程
 | 版本 | 日期 | commit | 變更 | 為什麼 |
 |---|---|---|---|---|
+| v0.5.0 | 2026-10-26 | （本次） | 新增「專案規劃」：說「專案規劃／規劃專案／規劃一個新專案／規劃新專案」＋想法，送出的 text 加 `【專案規劃】` 前綴（`DispatchTrigger.parse`，不改派工 API）；只講觸發詞時會請你說想法，下一句自動補前綴；說明書新增一節（2 個測試） | 倬要用說的把模糊想法變成新專案，並在手機 Claude App 接手；後端流程見 36 號 `claude-project-updates/2026-10-26-PROJECT-PLANNING-WORKFLOW.md` |
 | v0.4.1 | 2026-10-26 | （本次） | 音量鍵手勢新增「按的速度」：快（2 秒內，手機側鍵）／慢（5 秒內、每下間隔 2.5 秒內，藍牙耳機）；音量廣播被合併時，用「變化前音量 ≠ 上次看到的音量」補回漏掉的那一下（feedObserved＋3 個測試，含實機紀錄重現） | 倬實測：手機側鍵在桌面可以叫出，藍牙耳機不行（耳機只送音量變化、不送按鍵，ColorOS 延遲且合併） |
 | v0.4.0 | 2026-10-26 | （本次） | 音量鍵手勢新增「無障礙服務」通道（VolumeAccessibilityService，選用）：只收音量鍵與音量廣播、不讀畫面；按鍵用按下當下的時間比對，且可直接從背景開畫面。偵測與叫出抽成 VolumeGestureCore，前台服務與無障礙服務共用；無障礙開著時前台服務不重複處理。設定頁加無障礙狀態與「開啟無障礙服務」按鈕；偵測紀錄標示來源與毫秒。API 37 模擬器驗證：關掉上層顯示權限、只開無障礙，桌面按加減加 → 對話畫面跳出、音量還原 | 倬實測：在桌面時音量廣播延遲 1～3 秒才送到、第一下還被合併掉（ColorOS 凍結背景 APP；VOLUME_CHANGED_ACTION 帶 REPLACE_PENDING），改 ColorOS 後台設定與設預設數位助理都無效 |
 | v0.3.4 | 2026-10-26 | （本次） | 「回家」「導航去公司」這類只講常用地點的句子不經 AI、直接導航（Places.shortcut）；講了交通方式或其他內容照常交給 AI | 倬實測「回家」要等 10 多秒，比講地名慢很多 |
@@ -61,6 +63,8 @@
 17. [ ] 裝了倬的鬧鐘 v0.12.0 後說「明天七點叫我」→ 倬的鬧鐘新增一次性鬧鐘（列表標一次性），不是系統時鐘
 18. [ ] 「設一個固定的明天八點鬧鐘」「常駐的二十五分鐘計時器」→ 響完留著
 19. [ ] 關掉網路（離線模式）說「計時五分鐘」→ 一樣交給倬的鬧鐘、一次性
+20. [ ] 「專案規劃，做一個記錄喝水的網頁」→ 唸出幾號單；15 分鐘內 Telegram 收到完成通知，手機 Claude App 的 Code 分頁看得到同名工作階段（**測完把資料夾移到 `_trash/`、執行 stop-rc-session.ps1、到派工網站取消**）
+21. [ ] 只說「專案規劃」→ 它請你說想法；接著說內容 → 派工網站上那張單的原文開頭是 `【專案規劃】`
 
 ## 已知問題
 - 模擬器（API 37）已驗證：對話畫面、測試台、app_list、alarm_set（交給倬的鬧鐘 APP 成功新增 00:00）、離線模式開 YouTube、查單與派工連不上分支。模擬器不在 Tailscale 內，派工成功分支未在裝置上驗證（電腦端 `/api/health` 正常）

@@ -47,15 +47,15 @@ class Orchestrator(
     private data class Pending(val call: PlannedCall, val token: String, val utterance: String)
 
     private var pending: Pending? = null
-    /** 只說了「派工」沒講內容，下一句話就是派工內容 */
-    private var awaitingDispatch = false
+    /** 只說了「派工」或「專案規劃」沒講內容，下一句話就是內容；記住是哪一種 */
+    private var awaitingDispatch: DispatchTrigger.Request? = null
     private val history = ArrayDeque<ChatMessage>()
 
     val hasPending get() = pending != null
 
     fun reset() {
         pending = null
-        awaitingDispatch = false
+        awaitingDispatch = null
         history.clear()
     }
 
@@ -75,20 +75,24 @@ class Orchestrator(
         }
 
         // 語音派工：本機規則判斷、原話直送，不經 AI（規格要求不在 APP 端改寫）
-        if (awaitingDispatch) {
-            awaitingDispatch = false
-            if (OfflineParser.isNegative(utterance) && utterance.length <= 6) return remember(utterance, Reply("好，不派工了。"))
-            return runDirect(utterance, "dispatch_send", JSONObject().put("text", utterance.trim()), onEvent)
+        awaitingDispatch?.let { waiting ->
+            awaitingDispatch = null
+            if (OfflineParser.isNegative(utterance) && utterance.length <= 6) {
+                return remember(utterance, Reply(if (waiting.planning) "好，先不規劃。" else "好，不派工了。"))
+            }
+            val text = waiting.copy(text = utterance.trim()).payload
+            return runDirect(utterance, "dispatch_send", JSONObject().put("text", text), onEvent)
         }
         DispatchTrigger.statusQuery(utterance)?.let { id ->
             return runDirect(utterance, "dispatch_status", JSONObject().put("id", id), onEvent)
         }
-        DispatchTrigger.extract(utterance)?.let { text ->
-            if (text.isEmpty()) {
-                awaitingDispatch = true
-                return remember(utterance, Reply("好，要派什麼工？請直接說需求。", expectsAnswer = true))
+        DispatchTrigger.parse(utterance)?.let { req ->
+            if (req.text.isEmpty()) {
+                awaitingDispatch = req
+                val ask = if (req.planning) "好，請說你的想法，想做什麼、給誰用都可以。" else "好，要派什麼工？請直接說需求。"
+                return remember(utterance, Reply(ask, expectsAnswer = true))
             }
-            return runDirect(utterance, "dispatch_send", JSONObject().put("text", text), onEvent)
+            return runDirect(utterance, "dispatch_send", JSONObject().put("text", req.payload), onEvent)
         }
 
         // 「回家」這類常用地點不用問 AI，直接導航（省掉一次 AI 往返）

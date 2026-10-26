@@ -39,6 +39,26 @@ class DispatchTriggerTest {
         assertNull(DispatchTrigger.extract("明天七點叫我"))
     }
 
+    @Test fun projectPlanning() {
+        // 規格範例：加前綴、原話不改
+        assertEquals("【專案規劃】我想做一個出國旅遊規劃的 APP", DispatchTrigger.extract("專案規劃，我想做一個出國旅遊規劃的 APP"))
+        assertEquals("【專案規劃】記錄喝水的網頁", DispatchTrigger.extract("規劃一個新專案：記錄喝水的網頁"))
+        assertEquals("【專案規劃】記錄喝水的網頁", DispatchTrigger.extract("請規劃專案 記錄喝水的網頁"))
+        val r = DispatchTrigger.parse("規劃新專案，記帳")!!
+        assertTrue(r.planning)
+        assertEquals("記帳", r.text)
+        // 一般派工不受影響
+        assertEquals(false, DispatchTrigger.parse("派工，記帳")!!.planning)
+    }
+
+    @Test fun projectPlanningTriggerOnly() {
+        // 只講觸發詞：回空字串，下一句再補前綴
+        assertEquals("", DispatchTrigger.extract("專案規劃"))
+        val r = DispatchTrigger.parse("專案規劃。")!!
+        assertTrue(r.planning)
+        assertEquals("【專案規劃】旅遊 APP", r.copy(text = "旅遊 APP").payload)
+    }
+
     @Test fun statusQuery() {
         assertEquals(12, DispatchTrigger.statusQuery("第 12 號派工單進度如何"))
         assertEquals(12, DispatchTrigger.statusQuery("12號單做好了沒"))

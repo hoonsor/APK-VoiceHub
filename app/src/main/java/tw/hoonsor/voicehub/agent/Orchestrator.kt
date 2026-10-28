@@ -99,6 +99,10 @@ class Orchestrator(
         Places.shortcut(utterance, Places.parse(settings.places))?.let { name ->
             return runDirect(utterance, "map_navigate", JSONObject().put("destination", name), onEvent)
         }
+        // 「去＋地點」直接用預設交通方式（機車）導航，不讓 AI 誤判成待辦事項
+        Places.goTo(utterance)?.let { place ->
+            return runDirect(utterance, "map_navigate", JSONObject().put("destination", place), onEvent)
+        }
 
         onEvent(Event.PhaseChanged(Phase.THINKING))
         val messages = mutableListOf(ChatMessage("system", Planner.systemPrompt(registry.catalogs.value, LocalDateTime.now(), Places.parse(settings.places).keys)))

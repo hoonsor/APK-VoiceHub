@@ -111,7 +111,7 @@ class AssistantViewModel : ViewModel() {
                 _state.update { it.copy(mode = Mode.IDLE, level = 0f, partial = "") }
                 return@launch
             }
-            process(text)
+            process(Graph.vocab.correct(text))
         }
     }
 
@@ -123,7 +123,7 @@ class AssistantViewModel : ViewModel() {
             is Recording.Speech -> {
                 _state.update { it.copy(mode = Mode.TRANSCRIBING, level = 0f) }
                 try {
-                    LlmClient.transcribe(settings.groqBaseUrl, settings.groqKey!!, settings.sttModel, rec.wav, STT_PROMPT)
+                    LlmClient.transcribe(settings.groqBaseUrl, settings.groqKey!!, settings.sttModel, rec.wav, Graph.vocab.sttPrompt(STT_PROMPT))
                         .let(::cleanTranscript)
                         .ifBlank { add { id -> Msg.Note(id, "沒聽清楚，請再說一次") }; null }
                 } catch (e: AiException) {

@@ -424,6 +424,62 @@
         }},
         "required": ["id"]
       }
+    },
+    {
+      "examples": [
+        "記住，拉斐爾常被聽成拉法耶",
+        "把利姆路加到詞庫"
+      ],
+      "name": "vocab_add",
+      "description": "把專有名詞加進語音個人詞庫，輸入法、語音總控、語音記帳都會聽對。不可用於人名。回覆時直接唸 summary。",
+      "risk": "reversible",
+      "title": "記住詞彙",
+      "params": {
+        "type": "object",
+        "properties": {
+          "aliases": {
+            "description": "常被聽成的寫法，可省略",
+            "type": "array",
+            "items": {"type": "string"}
+          },
+          "term": {
+            "description": "正確寫法，1-40 字",
+            "type": "string"
+          },
+          "category": {
+            "description": "分類：project、app、official、life、other，可省略",
+            "type": "string"
+          }
+        },
+        "required": ["term"]
+      }
+    },
+    {
+      "examples": ["取消剛才那個詞"],
+      "name": "vocab_undo",
+      "description": "取消最近一次新增到語音個人詞庫的詞。",
+      "risk": "reversible",
+      "title": "取消剛才的詞",
+      "params": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "examples": [
+        "詞庫有幾個候選",
+        "詞庫狀態"
+      ],
+      "name": "vocab_status",
+      "description": "查詢語音個人詞庫有幾個詞、幾個候選等待確認。",
+      "risk": "read",
+      "title": "詞庫狀態",
+      "params": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
     }
   ]
 }

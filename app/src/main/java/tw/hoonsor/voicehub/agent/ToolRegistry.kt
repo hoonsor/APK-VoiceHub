@@ -118,6 +118,7 @@ class ToolRegistry(private val context: Context) {
             ?: return AgentResult.fail(AgentApi.NOT_FOUND, "沒有任何 APP 提供「$action」這個動作")
         if (catalog.builtin) {
             if (action in BuiltinCatalog.DISPATCH_ACTIONS) return dispatchAction(action, params, dryRun)
+            if (action in BuiltinCatalog.VOCAB_ACTIONS) return Graph.vocab.execute(action, params, dryRun)
             return withContext(Dispatchers.Main) { builtin.execute(action, params, dryRun) }
         }
         val remote = _remotes.value.firstOrNull { it.packageName == catalog.packageName }

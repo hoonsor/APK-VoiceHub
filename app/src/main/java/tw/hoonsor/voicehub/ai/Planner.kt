@@ -27,7 +27,7 @@ class PlanParseException(message: String) : Exception(message)
  */
 object Planner {
 
-    fun systemPrompt(catalogs: List<AgentCatalog>, now: LocalDateTime, placeNames: Collection<String> = emptyList()): String {
+    fun systemPrompt(catalogs: List<AgentCatalog>, now: LocalDateTime, placeNames: Collection<String> = emptyList(), vocabNote: String = ""): String {
         val weekday = now.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.TRADITIONAL_CHINESE)
         val time = now.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
         // 倬自己的 APP 排前面，系統動作放最後
@@ -70,6 +70,7 @@ $tools
 11. 鬧鐘與計時器：有「倬的鬧鐘」時一律用它的動作（alarm_create、timer_start…），不要用系統的 alarm_set、timer_set。新增的鬧鐘和計時器預設一次性（響完自動刪除），params 不要帶 auto_delete；只有倬明確說「固定、重複、常駐、保留、響完不要刪」才帶 auto_delete: false。
 12. 倬設定的常用地點：${if (placeNames.isEmpty()) "（沒有）" else placeNames.joinToString("、")}。說「回家」「去公司」這類常用地點時，map_navigate 的 destination 直接填名稱（例如「家」），不要自己猜地址；沒有設定的地點就請倬講地址或地標。
 13. 「去＋地點」（去涮金鍋、去台北車站、到全聯）是要導航：用 map_navigate，mode 省略，不要當成待辦事項。只有倬明確說「提醒我、待辦、記得、加到清單」才用待辦事項的動作。
+${if (vocabNote.isEmpty()) "" else "14. 倬常用的專有名詞（語音辨識寫錯時依發音改回正確寫法，不要照錯字執行）：$vocabNote"}
 """.trim()
     }
 

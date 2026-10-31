@@ -193,6 +193,9 @@ object Schema {
 
     fun bool(desc: String): JSONObject = JSONObject().put("type", "boolean").put("description", desc)
 
+    fun strArray(desc: String): JSONObject = JSONObject().put("type", "array").put("description", desc)
+        .put("items", JSONObject().put("type", "string"))
+
     fun intArray(desc: String): JSONObject = JSONObject().put("type", "array").put("description", desc)
         .put("items", JSONObject().put("type", "integer"))
 }

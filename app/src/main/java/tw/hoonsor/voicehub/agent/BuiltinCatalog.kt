@@ -5,6 +5,7 @@ import tw.hoonsor.voicehub.agent.Schema.int
 import tw.hoonsor.voicehub.agent.Schema.intArray
 import tw.hoonsor.voicehub.agent.Schema.obj
 import tw.hoonsor.voicehub.agent.Schema.str
+import tw.hoonsor.voicehub.agent.Schema.strArray
 
 /**
  * 大腦內建的「系統動作」：透過 Android 標準 Intent 或系統服務操作手機與第三方 APP。
@@ -131,9 +132,30 @@ object BuiltinCatalog {
             obj("id" to int("派工單編號", 1), required = listOf("id")),
             listOf("第 12 號派工單進度如何", "12 號單做好了沒"),
         ),
+        ActionSpec(
+            "vocab_add", "記住詞彙", "把專有名詞加進語音個人詞庫，輸入法、語音總控、語音記帳都會聽對。不可用於人名。回覆時直接唸 summary。", Risk.REVERSIBLE,
+            obj(
+                "term" to str("正確寫法，1-40 字"),
+                "aliases" to strArray("常被聽成的寫法，可省略"),
+                "category" to str("分類：project、app、official、life、other，可省略"),
+                required = listOf("term"),
+            ),
+            listOf("記住，拉斐爾常被聽成拉法耶", "把利姆路加到詞庫"),
+        ),
+        ActionSpec(
+            "vocab_undo", "取消剛才的詞", "取消最近一次新增到語音個人詞庫的詞。", Risk.REVERSIBLE,
+            obj(),
+            listOf("取消剛才那個詞"),
+        ),
+        ActionSpec(
+            "vocab_status", "詞庫狀態", "查詢語音個人詞庫有幾個詞、幾個候選等待確認。", Risk.READ,
+            obj(),
+            listOf("詞庫有幾個候選", "詞庫狀態"),
+        ),
     )
 
     val DISPATCH_ACTIONS = setOf("dispatch_send", "dispatch_status")
+    val VOCAB_ACTIONS = setOf("vocab_add", "vocab_undo", "vocab_status")
 
     fun catalog(packageName: String, version: String) = AgentCatalog(
         app = APP_NAME,

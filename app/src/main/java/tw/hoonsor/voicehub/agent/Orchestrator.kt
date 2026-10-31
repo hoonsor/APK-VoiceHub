@@ -12,7 +12,9 @@ import tw.hoonsor.voicehub.ai.PlanParseException
 import tw.hoonsor.voicehub.ai.PlannedCall
 import tw.hoonsor.voicehub.ai.Planner
 import tw.hoonsor.voicehub.data.Settings
+import tw.hoonsor.voicehub.Graph
 import tw.hoonsor.voicehub.dispatch.DispatchTrigger
+import tw.hoonsor.voicehub.vocab.VocabCommand
 import java.time.LocalDateTime
 
 /**
@@ -95,6 +97,14 @@ class Orchestrator(
             return runDirect(utterance, "dispatch_send", JSONObject().put("text", req.payload), onEvent)
         }
 
+        // 教詞和派工一樣走本機規則，原話不經 AI
+        when (val cmd = VocabCommand.parse(utterance)) {
+            is VocabCommand.Add -> return runDirect(utterance, "vocab_add", JSONObject().put("term", cmd.term).put("aliases", JSONArray(cmd.aliases)), onEvent)
+            VocabCommand.Undo -> return runDirect(utterance, "vocab_undo", JSONObject(), onEvent)
+            VocabCommand.Status -> return runDirect(utterance, "vocab_status", JSONObject(), onEvent)
+            null -> Unit
+        }
+
         // 「回家」這類常用地點不用問 AI，直接導航（省掉一次 AI 往返）
         Places.shortcut(utterance, Places.parse(settings.places))?.let { name ->
             return runDirect(utterance, "map_navigate", JSONObject().put("destination", name), onEvent)
@@ -105,7 +115,7 @@ class Orchestrator(
         }
 
         onEvent(Event.PhaseChanged(Phase.THINKING))
-        val messages = mutableListOf(ChatMessage("system", Planner.systemPrompt(registry.catalogs.value, LocalDateTime.now(), Places.parse(settings.places).keys)))
+        val messages = mutableListOf(ChatMessage("system", Planner.systemPrompt(registry.catalogs.value, LocalDateTime.now(), Places.parse(settings.places).keys, Graph.vocab.plannerNote())))
         messages += history
         messages += ChatMessage("user", utterance)
 

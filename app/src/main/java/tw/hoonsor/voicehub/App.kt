@@ -14,6 +14,7 @@ import tw.hoonsor.voicehub.agent.ToolRegistry
 import tw.hoonsor.voicehub.data.Settings
 import tw.hoonsor.voicehub.dispatch.DispatchService
 import tw.hoonsor.voicehub.ui.MainActivity
+import tw.hoonsor.voicehub.vocab.VocabBridge
 import tw.hoonsor.voicehub.voice.Speaker
 
 /** 全 APP 共用的單例 */
@@ -28,6 +29,8 @@ object Graph {
         private set
     lateinit var dispatch: DispatchService
         private set
+    lateinit var vocab: VocabBridge
+        private set
     val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     private var speakerInstance: Speaker? = null
@@ -38,6 +41,7 @@ object Graph {
         app = context.applicationContext
         settings = Settings(app)
         dispatch = DispatchService(app) { settings.dispatchBaseUrl }
+        vocab = VocabBridge(app, appScope) { settings.vocabToken }
         registry = ToolRegistry(app)
         orchestrator = Orchestrator(app, settings, registry)
     }

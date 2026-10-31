@@ -33,6 +33,11 @@ class Settings(context: Context) {
         get() = vault.get("llmKey")
         set(v) = vault.put("llmKey", v)
 
+    // ---- 語音個人詞庫中心 ----
+    var vocabToken: String?
+        get() = vault.get("vocabToken")
+        set(v) = vault.put("vocabToken", v)
+
     // ---- Groq：語音轉文字＋AI 備援 ----
     var groqKey: String?
         get() = vault.get("groqKey")

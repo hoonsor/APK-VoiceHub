@@ -29,6 +29,7 @@
 ## 版本歷程
 | 版本 | 日期 | commit | 變更 | 為什麼 |
 |---|---|---|---|---|
+| 未發版（feat/vocab-hub） | 2026-10-31 | （本次） | 接上語音個人詞庫中心（63 號）：Whisper 提示與 AI 規劃帶入共用詞、辨識後替換（Android 內建辨識也有效）、語音動作 vocab_add／vocab_undo／vocab_status、設定頁權杖與提案 APP 名、健康檢查。邏輯都在 `vocab/`，`tw.hoonsor.vocab` 是複製來的共用檔，不要在這裡改。動到的既有檔案：AssistantViewModel.kt（2 行）、Planner.kt、Orchestrator.kt、ToolRegistry.kt、BuiltinCatalog.kt、Settings.kt、Screens.kt、App.kt | 專案名、APP 名、公文術語一處維護，輸入法、語音總控、語音記帳共用 |
 | v0.5.1 | 2026-10-28 | （本次） | 「去＋地點」（去涮金鍋、導航到台北車站、帶我去最近的全聯）不經 AI、直接用預設交通方式（機車）導航（Places.goTo＋2 個測試）；去買／去繳／去接、提醒、時間字眼、問句照常交給 AI；Planner 規則 13：去地點＝導航，不是待辦 | 倬說「去涮金鍋」思考很久後被當成待辦事項（待辦 APP 上線後 AI 誤判） |
 | v0.5.0 | 2026-10-26 | （本次） | 新增「專案規劃」：說「專案規劃／規劃專案／規劃一個新專案／規劃新專案」＋想法，送出的 text 加 `【專案規劃】` 前綴（`DispatchTrigger.parse`，不改派工 API）；只講觸發詞時會請你說想法，下一句自動補前綴；說明書新增一節（2 個測試） | 倬要用說的把模糊想法變成新專案，並在手機 Claude App 接手；後端流程見 36 號 `claude-project-updates/2026-10-26-PROJECT-PLANNING-WORKFLOW.md` |
 | v0.4.1 | 2026-10-26 | （本次） | 音量鍵手勢新增「按的速度」：快（2 秒內，手機側鍵）／慢（5 秒內、每下間隔 2.5 秒內，藍牙耳機）；音量廣播被合併時，用「變化前音量 ≠ 上次看到的音量」補回漏掉的那一下（feedObserved＋3 個測試，含實機紀錄重現） | 倬實測：手機側鍵在桌面可以叫出，藍牙耳機不行（耳機只送音量變化、不送按鍵，ColorOS 延遲且合併） |

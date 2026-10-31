@@ -297,6 +297,16 @@ fun HealthScreen() {
             },
             if (hasLlm && hasGroq) true else if (hasLlm || hasGroq) null else false,
         ) {}
+        val vocab = remember(tick) { Graph.vocab.client.status() }
+        HealthItem(
+            "語音個人詞庫",
+            when {
+                s.vocabToken.isNullOrBlank() -> "尚未設定權杖，語音照常運作，只是沒有共用詞"
+                vocab.lastError != null -> "同步失敗（${vocab.lastError}），先用手機上的 ${vocab.termCount} 個詞"
+                else -> "${vocab.termCount} 詞・版本 ${vocab.revision ?: "—"}" + if (vocab.pending > 0) "・${vocab.pending} 筆待送" else ""
+            },
+            if (s.vocabToken.isNullOrBlank()) null else vocab.lastError == null,
+        ) {}
         var dispatchMsg by remember { mutableStateOf("" to (null as Boolean?)) }
         val queued = remember(tick) { Graph.dispatch.queue.size }
         HealthItem(
@@ -408,6 +418,42 @@ private fun HealthItem(title: String, desc: String, ok: Boolean?, actions: @Comp
 // ===================== 設定 =====================
 
 @Composable
+private fun VocabSettingsCard() {
+    val s = Graph.settings
+    val ctx = LocalContext.current
+    var token by remember { mutableStateOf("") }
+    var hasToken by remember { mutableStateOf(!s.vocabToken.isNullOrBlank()) }
+    var status by remember { mutableStateOf(vocabStatusText()) }
+    SectionTitle("語音個人詞庫")
+    Card {
+        Text("專案名、APP 名、公文術語一處維護，和輸入法、語音記帳共用。沒設定也能正常用。", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.height(8.dp))
+        Field("裝置權杖（在詞庫網站的「裝置」頁產生）", token, { token = it }, secret = true, placeholder = if (hasToken) "已設定（留空不變）" else "尚未設定")
+        Spacer(Modifier.height(6.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlineButton("儲存並同步", icon = Glyph.Bolt) {
+                if (token.isNotBlank()) s.vocabToken = token.trim()
+                token = ""
+                hasToken = !s.vocabToken.isNullOrBlank()
+                status = "同步中…"
+                Graph.vocab.syncInBackground { status = vocabStatusText() }
+            }
+            if (hasToken) OutlineButton("提案 APP 名") {
+                status = "提案中…"
+                Graph.vocab.proposeApps(Graph.registry.builtin.launchableApps().map { it.label }) { n -> status = "已提案 $n 個 APP 名，到詞庫網站的候選頁確認" }
+            }
+        }
+        Text(status, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+private fun vocabStatusText(): String {
+    val s = Graph.vocab.client.status()
+    val time = if (s.lastSyncAt == 0L) "尚未同步" else "已同步"
+    return "$time・${s.termCount} 詞・版本 ${s.revision ?: "—"}" + (if (s.pending > 0) "・${s.pending} 筆待送" else "") + (s.lastError?.let { "・$it" } ?: "")
+}
+
+@Composable
 fun SettingsScreen() {
     val s = Graph.settings
     val scope = rememberCoroutineScope()
@@ -496,6 +542,8 @@ fun SettingsScreen() {
             }
             ResultText(groqMsg.first, groqMsg.second)
         }
+
+        VocabSettingsCard()
 
         SectionTitle("語音派工（利姆路 raphael-dispatch）")
         Card {

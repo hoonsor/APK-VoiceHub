@@ -1,0 +1,32 @@
+{
+  "description": "替換邏輯的共用測試案例。TypeScript 與 Kotlin 都要全部通過；改行為先改這裡。",
+  "terms": [
+    { "term": "拉斐爾", "aliases": [{ "text": "拉法耶", "replace": true }, { "text": "拉菲爾", "replace": true }, { "text": "拉法", "replace": false }] },
+    { "term": "語音總控", "aliases": [{ "text": "語音縱控", "replace": true }] },
+    { "term": "語音總控中心", "aliases": [{ "text": "語音縱控中心", "replace": true }] },
+    { "term": "VoiceHub", "aliases": [{ "text": "voice hub", "replace": true }, { "text": "哇伊斯哈布", "replace": true }] },
+    { "term": "CSV", "aliases": [{ "text": "GSD", "replace": true }] },
+    { "term": "AB", "aliases": [{ "text": "B", "replace": true }] },
+    { "term": "甲", "aliases": [{ "text": "乙乙", "replace": true }] },
+    { "term": "乙乙乙", "aliases": [{ "text": "甲", "replace": true }] },
+    { "term": "拉法耶爾", "aliases": [] }
+  ],
+  "cases": [
+    { "name": "基本替換", "input": "幫我問拉法耶今天學了什麼", "output": "幫我問拉斐爾今天學了什麼", "hits": ["拉法耶"] },
+    { "name": "同一詞多個別名", "input": "拉菲爾和拉法耶", "output": "拉斐爾和拉斐爾", "hits": ["拉菲爾", "拉法耶"] },
+    { "name": "未開啟替換的別名不動", "input": "拉法在哪裡", "output": "拉法在哪裡", "hits": [] },
+    { "name": "沒有別名的句子不變", "input": "今天天氣很好", "output": "今天天氣很好", "hits": [] },
+    { "name": "空字串", "input": "", "output": "", "hits": [] },
+    { "name": "長別名優先", "input": "打開語音縱控中心", "output": "打開語音總控中心", "hits": ["語音縱控中心"] },
+    { "name": "短別名仍然有效", "input": "打開語音縱控", "output": "打開語音總控", "hits": ["語音縱控"] },
+    { "name": "已是正確寫法不動", "input": "拉斐爾很好", "output": "拉斐爾很好", "hits": [] },
+    { "name": "別名是別的正確寫法的一部分時不動", "input": "拉法耶爾來了", "output": "拉法耶爾來了", "hits": [] },
+    { "name": "英文別名不分大小寫", "input": "打開 Voice Hub 設定", "output": "打開 VoiceHub 設定", "hits": ["voice hub"] },
+    { "name": "英文別名要有字界", "input": "這是 GSDX 工具", "output": "這是 GSDX 工具", "hits": [] },
+    { "name": "英文別名前面是字母不算", "input": "XGSD 工具", "output": "XGSD 工具", "hits": [] },
+    { "name": "英文別名夾在中文中間", "input": "用GSD轉成Excel", "output": "用CSV轉成Excel", "hits": ["GSD"] },
+    { "name": "不到 2 字的別名一律不替換", "input": "B 計畫", "output": "B 計畫", "hits": [] },
+    { "name": "中文音譯別名", "input": "打開哇伊斯哈布", "output": "打開VoiceHub", "hits": ["哇伊斯哈布"] },
+    { "name": "不做連鎖替換", "input": "乙乙", "output": "甲", "hits": ["乙乙"] }
+  ]
+}

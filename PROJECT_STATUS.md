@@ -75,12 +75,20 @@
 
 ## 下一步
 1. 實機驗證上面清單（裝最新 latest，用 Obtainium 或 App 內更新），依編號回報修正
-2. 鬧鐘 APP 補 Agent API（照 AGENT_PROTOCOL.md：複製 SDK、AgentProvider、相容檢查）。目前四個 APP 都只有 manifest、沒有 Provider，語音總控實際能用的只有內建動作
-3. 依序補倬注音、照片整理箱、螢幕翻譯的 Provider
-4. 備份四件套、對話紀錄
-5. Claude Design 補版面方案比較，更新 DESIGN.md；修 lintLabDebug 的 startActivityAndCollapse 棄用警告
+2. 依序補倬注音、照片整理箱、螢幕翻譯的 Provider（鬧鐘、待辦、資料包、SoundFlow 已有 Provider，2026-11-01 查證）
+3. 備份四件套、對話紀錄
+4. Claude Design 補版面方案比較，更新 DESIGN.md；修 lintLabDebug 的 startActivityAndCollapse 棄用警告
+5. 主動代理化：等倬決定 PRD 方向稿的 D1～D8（`D:\01-Project\42-語音總控制APP\docs\PRD-Duet化方向-v0.1.md`），先做 M0
 
 ## 交接紀錄
+### 2026-11-01／電腦 A
+- 完成：分析 Claude Duet，寫出主動代理化的 PRD 方向稿 v0.1（功能對照、架構、子專案、資料、帳號、階段、決策 D1～D8）。沒有改程式
+- 決定＋原因：方向稿放中文資料夾，不進本 repo（repo 公開，文件含個人架構與帳號配置）
+- 放棄：直接把代理層塞進 APP（ColorOS 會凍結背景，帳號權杖也不該放手機）；以拉斐爾當核心（MiniMax 不能碰公務，週額度也曾用完）
+- 未完成：D1～D8 都未決定，尤其本檔 AGENTS.md 的「Never：用語音處理公務／個資」要倬決定是否修改
+- 發現：`main` 還在 v0.4.1；v0.5.0、v0.5.1 只在 `feat/project-planning`，另有 `feat/vocab-hub`、`docs/manual-datapack`、`docs/photobox-sort-start` 未合併
+- 環境注意：42 號中文資料夾不在 Git，方向稿目前只存在電腦 A
+
 ### 2026-10-26／電腦 A
 - 完成：v0.3.3～v0.4.0 音量鍵手勢在桌面叫不出的問題、「回家」常用地點與快速通道
 - 發現：OPPO Reno 14F（ColorOS）在 APP 背景時，音量廣播延遲 1～3 秒且會被合併（第一下遺失），在 APP 前景時正常；開「允許完全後台行為」、設預設數位助理都沒改善

@@ -82,6 +82,12 @@
 5. 主動代理化：等倬決定 PRD 方向稿的 D1～D8（`D:\01-Project\42-語音總控制APP\docs\PRD-Duet化方向-v0.1.md`），先做 M0
 
 ## 交接紀錄
+### 2026-11-02／電腦 A（說明書收錄賈維斯資料包）
+- 完成：MANUAL.md 新增「賈維斯資料包」一章 11 節（本分支 59e624b、main 934b374）。main 的 CI run 41463330344 的 manual 與 build 都綠；`--github` 檢查 124 節通過；Python 16、Android 91 個測試通過
+- 決定＋原因：沿用 `docs/manual-datapack` 的章節再依 manifest 與 DataPack 程式補齊，不重寫；同時 cherry-pick 到 main，因為每日排程跑在 main，只合說明書，不把 v0.5～v0.6 的程式帶進 main（回滾點 tag `pre-merge-v0.6.0`）
+- 未完成：v0.6.0 tag 那次 CI 會維持紅色（tag 內容不變，重跑也一樣），下一個 tag 才會綠；APK 內的說明書要下一版才有這章。`docs/manual-datapack` 已被取代，可以刪；APK-DataPack 的 PROJECT_STATUS 還寫著未合併
+- 環境注意：本機 Python 跑 `--github` 會憑證失敗，要設 `SSL_CERT_FILE` 指向 Git 的 ca-bundle；`--local D:\dev` 會把 APK-VoiceHub-vocab worktree 當成別的 APP 而誤報
+
 ### 2026-11-02／電腦 A
 - 完成：v0.6.0 分享圖片到海報工坊。模擬器驗證：分享畫面、離線時圖片留在佇列；multipart 格式用測試閘道驗證解得開
 - 決定＋原因：直接經 Tailscale 傳到 A，不走雲端硬碟（參考圖只放本機）；沿用派工暫存的補送時機，不加 WorkManager

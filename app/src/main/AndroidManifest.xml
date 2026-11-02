@@ -73,6 +73,23 @@
             </intent-filter>
         </activity>
 
+        <!-- 系統分享選單：圖片傳到 65 號海報工坊當參考圖 -->
+        <activity
+            android:name=".share.ShareActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:label="@string/share_label"
+            android:taskAffinity="tw.hoonsor.voicehub.share"
+            android:theme="@style/Theme.VoiceHub.Overlay"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+        </activity>
+
         <!-- 設定、健康檢查、API 測試台 -->
         <activity
             android:name=".ui.MainActivity"

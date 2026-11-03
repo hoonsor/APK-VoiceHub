@@ -323,6 +323,21 @@ fun HealthScreen() {
                 }
             }
         }
+        var shareMsg by remember { mutableStateOf("") }
+        val sharePending = remember(tick) { Graph.references.size }
+        HealthItem(
+            "分享圖片到海報工坊",
+            shareMsg.ifBlank { "在相簿或截圖按分享 › 做成海報樣板。需要手機的 Tailscale 開著、A 電腦開機。" } + if (sharePending > 0) "\n待補送：$sharePending 張" else "",
+            if (sharePending > 0) false else null,
+        ) {
+            if (sharePending > 0) OutlineButton("立即補送", icon = Glyph.Refresh) {
+                scope.launch {
+                    val rep = Graph.references.flush()
+                    shareMsg = if (rep.remaining > 0) "仍連不上，還有 ${rep.remaining} 張" else "補送完成：${rep.sent} 張"
+                    tick++
+                }
+            }
+        }
         HealthItem("中文語音朗讀", ttsMsg.ifBlank { "按測試聽聽看；沒聲音請到系統「文字轉語音」安裝中文語音" }, null) {
             OutlineButton("測試朗讀", icon = Glyph.Play) {
                 scope.launch {
@@ -502,6 +517,14 @@ fun SettingsScreen() {
             Field("派工網址（經 Tailscale，不需金鑰）", dispatchBase, { dispatchBase = it })
             Spacer(Modifier.height(8.dp))
             Text("說「派工…」「我有個點子…」「叫利姆路…」開頭，原話會直接送出，不經 AI 改寫。", color = C.muted, style = MaterialTheme.typography.bodyMedium)
+        }
+
+        SectionTitle("海報工坊（分享圖片）")
+        Card {
+            var workshop by remember { mutableStateOf(s.workshopBaseUrl) }
+            Field("閘道網址（經 Tailscale，不需金鑰）", workshop, { workshop = it; s.workshopBaseUrl = it.ifBlank { Settings.DEFAULT_WORKSHOP_BASE } })
+            Spacer(Modifier.height(8.dp))
+            Text("圖片直接傳到你的電腦，不經過 AI 服務。輸入後立刻生效。", color = C.muted, style = MaterialTheme.typography.bodyMedium)
         }
 
         SectionTitle("語音")

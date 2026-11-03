@@ -103,6 +103,11 @@ class Settings(context: Context) {
         get() = p.getString("dispatchBaseUrl", DEFAULT_DISPATCH_BASE) ?: DEFAULT_DISPATCH_BASE
         set(v) = p.edit().putString("dispatchBaseUrl", v.trim()).apply()
 
+    // ---- 海報工坊（65 號閘道，經 Tailscale，分享圖片時用） ----
+    var workshopBaseUrl: String
+        get() = p.getString("workshopBaseUrl", DEFAULT_WORKSHOP_BASE) ?: DEFAULT_WORKSHOP_BASE
+        set(v) = p.edit().putString("workshopBaseUrl", v.trim()).apply()
+
     val hasLlm get() = !llmKey.isNullOrBlank()
     val hasGroq get() = !groqKey.isNullOrBlank()
 
@@ -113,6 +118,7 @@ class Settings(context: Context) {
         const val DEFAULT_STT_MODEL = "whisper-large-v3"
         const val DEFAULT_FALLBACK_MODEL = "llama-3.3-70b-versatile"
         const val DEFAULT_DISPATCH_BASE = "https://hoonsoropenclaw.tail71361e.ts.net"
+        const val DEFAULT_WORKSHOP_BASE = "https://desktop-5dm4edt.tail71361e.ts.net:8443"
     }
 }
 

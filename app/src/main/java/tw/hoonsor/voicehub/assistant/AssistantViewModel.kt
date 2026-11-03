@@ -54,6 +54,13 @@ class AssistantViewModel : ViewModel() {
     init {
         // 每次打開都重新向其他 APP 要動作清單（各自 5 秒逾時，不擋聆聽）
         viewModelScope.launch { runCatching { Graph.registry.refresh() } }
+        // 之前連不上而暫存的參考圖：打開對話畫面時自動補送
+        if (Graph.references.size > 0) {
+            Graph.appScope.launch {
+                val sent = Graph.references.flush().sent
+                if (sent > 0) add { id -> Msg.Note(id, "補送 $sent 張參考圖到海報工坊") }
+            }
+        }
         // 之前連不上而暫存的派工：打開對話畫面時自動補送
         if (Graph.dispatch.queue.size > 0) {
             Graph.appScope.launch {

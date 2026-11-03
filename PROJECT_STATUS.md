@@ -1,6 +1,6 @@
 # PROJECT_STATUS — 語音總控（APK-VoiceHub）
 
-- 目前版本：v0.4.1（main 推送後由 CI 發佈 latest；使用說明書已在模擬器驗證）
+- 目前版本：v0.6.0（main 推送後由 CI 發佈 latest；使用說明書已在模擬器驗證）
 - 程式碼：`D:\dev\APK-VoiceHub`；專案資料夾 `D:\01-Project\42-語音總控制APP`（CODE_LOCATION.txt 指過來）
 - 套件：`tw.hoonsor.voicehub`（LAB：`tw.hoonsor.voicehub.lab`）
 
@@ -20,6 +20,7 @@
 - [x] 倬在電腦 A 執行 setup-hoonsor-signing.ps1 產生 hoonsor-release.jks 並寫入 Secrets（2026-10-18，latest 已驗證為共用簽章）
 - [x] 使用說明書分頁 F30（v0.2.0）：docs/manual/MANUAL.md 唯一來源、搜尋、點例句帶入、即時狀態、ManualTest、每日收錄檢查 manual_coverage_check.py
 - [x] 協定唯一來源 AGENT_PROTOCOL.md、共用 SDK HoonsorAgent.kt、CI 相容檢查、deprecated 支援
+- [x] 專案規劃觸發詞（v0.5.0）：「專案規劃」等觸發詞送出時加 `【專案規劃】` 前綴，後端照技能 hoonsor-project-planning 建專案＋開 Remote Control
 - [ ] 實機驗證（見下方清單）
 - [ ] Claude Design 版面方案比較（SOP 第 3 階段，事後補）
 - [ ] 備份四件套（F23）
@@ -28,6 +29,9 @@
 ## 版本歷程
 | 版本 | 日期 | commit | 變更 | 為什麼 |
 |---|---|---|---|---|
+| v0.6.0 | 2026-11-02 | （本次） | 系統分享選單新增「做成海報樣板」：圖片複製到手機佇列、傳到 65 號閘道 `/api/references`，連不上就留著，開對話畫面或健康檢查補送；「確認不含個資、公務內容」預設關閉；HEIC 轉 JPEG；設定頁可改閘道網址（ReferenceOutbox＋5 個測試） | 倬要把看到的圖分享給海報工坊做成樣板 |
+| v0.5.1 | 2026-10-28 | （本次） | 「去＋地點」（去涮金鍋、導航到台北車站、帶我去最近的全聯）不經 AI、直接用預設交通方式（機車）導航（Places.goTo＋2 個測試）；去買／去繳／去接、提醒、時間字眼、問句照常交給 AI；Planner 規則 13：去地點＝導航，不是待辦 | 倬說「去涮金鍋」思考很久後被當成待辦事項（待辦 APP 上線後 AI 誤判） |
+| v0.5.0 | 2026-10-26 | （本次） | 新增「專案規劃」：說「專案規劃／規劃專案／規劃一個新專案／規劃新專案」＋想法，送出的 text 加 `【專案規劃】` 前綴（`DispatchTrigger.parse`，不改派工 API）；只講觸發詞時會請你說想法，下一句自動補前綴；說明書新增一節（2 個測試） | 倬要用說的把模糊想法變成新專案，並在手機 Claude App 接手；後端流程見 36 號 `claude-project-updates/2026-10-26-PROJECT-PLANNING-WORKFLOW.md` |
 | v0.4.1 | 2026-10-26 | （本次） | 音量鍵手勢新增「按的速度」：快（2 秒內，手機側鍵）／慢（5 秒內、每下間隔 2.5 秒內，藍牙耳機）；音量廣播被合併時，用「變化前音量 ≠ 上次看到的音量」補回漏掉的那一下（feedObserved＋3 個測試，含實機紀錄重現） | 倬實測：手機側鍵在桌面可以叫出，藍牙耳機不行（耳機只送音量變化、不送按鍵，ColorOS 延遲且合併） |
 | v0.4.0 | 2026-10-26 | （本次） | 音量鍵手勢新增「無障礙服務」通道（VolumeAccessibilityService，選用）：只收音量鍵與音量廣播、不讀畫面；按鍵用按下當下的時間比對，且可直接從背景開畫面。偵測與叫出抽成 VolumeGestureCore，前台服務與無障礙服務共用；無障礙開著時前台服務不重複處理。設定頁加無障礙狀態與「開啟無障礙服務」按鈕；偵測紀錄標示來源與毫秒。API 37 模擬器驗證：關掉上層顯示權限、只開無障礙，桌面按加減加 → 對話畫面跳出、音量還原 | 倬實測：在桌面時音量廣播延遲 1～3 秒才送到、第一下還被合併掉（ColorOS 凍結背景 APP；VOLUME_CHANGED_ACTION 帶 REPLACE_PENDING），改 ColorOS 後台設定與設預設數位助理都無效 |
 | v0.3.4 | 2026-10-26 | （本次） | 「回家」「導航去公司」這類只講常用地點的句子不經 AI、直接導航（Places.shortcut）；講了交通方式或其他內容照常交給 AI | 倬實測「回家」要等 10 多秒，比講地名慢很多 |
@@ -61,6 +65,8 @@
 17. [ ] 裝了倬的鬧鐘 v0.12.0 後說「明天七點叫我」→ 倬的鬧鐘新增一次性鬧鐘（列表標一次性），不是系統時鐘
 18. [ ] 「設一個固定的明天八點鬧鐘」「常駐的二十五分鐘計時器」→ 響完留著
 19. [ ] 關掉網路（離線模式）說「計時五分鐘」→ 一樣交給倬的鬧鐘、一次性
+20. [ ] 「專案規劃，做一個記錄喝水的網頁」→ 唸出幾號單；15 分鐘內 Telegram 收到完成通知，手機 Claude App 的 Code 分頁看得到同名工作階段（**測完把資料夾移到 `_trash/`、執行 stop-rc-session.ps1、到派工網站取消**）
+21. [ ] 只說「專案規劃」→ 它請你說想法；接著說內容 → 派工網站上那張單的原文開頭是 `【專案規劃】`
 
 ## 已知問題
 - 模擬器（API 37）已驗證：對話畫面、測試台、app_list、alarm_set（交給倬的鬧鐘 APP 成功新增 00:00）、離線模式開 YouTube、查單與派工連不上分支。模擬器不在 Tailscale 內，派工成功分支未在裝置上驗證（電腦端 `/api/health` 正常）
@@ -70,12 +76,31 @@
 
 ## 下一步
 1. 實機驗證上面清單（裝最新 latest，用 Obtainium 或 App 內更新），依編號回報修正
-2. 鬧鐘 APP 補 Agent API（照 AGENT_PROTOCOL.md：複製 SDK、AgentProvider、相容檢查）。目前四個 APP 都只有 manifest、沒有 Provider，語音總控實際能用的只有內建動作
-3. 依序補倬注音、照片整理箱、螢幕翻譯的 Provider
-4. 備份四件套、對話紀錄
-5. Claude Design 補版面方案比較，更新 DESIGN.md；修 lintLabDebug 的 startActivityAndCollapse 棄用警告
+2. 依序補倬注音、照片整理箱、螢幕翻譯的 Provider（鬧鐘、待辦、資料包、SoundFlow 已有 Provider，2026-11-01 查證）
+3. 備份四件套、對話紀錄
+4. Claude Design 補版面方案比較，更新 DESIGN.md；修 lintLabDebug 的 startActivityAndCollapse 棄用警告
+5. 主動代理化：等倬決定 PRD 方向稿的 D1～D8（`D:\01-Project\42-語音總控制APP\docs\PRD-Duet化方向-v0.1.md`），先做 M0
 
 ## 交接紀錄
+### 2026-11-02／電腦 A（說明書收錄賈維斯資料包）
+- 完成：MANUAL.md 新增「賈維斯資料包」一章 11 節（本分支 59e624b、main 934b374）。main 的 CI run 41463330344 的 manual 與 build 都綠；`--github` 檢查 124 節通過；Python 16、Android 91 個測試通過
+- 決定＋原因：沿用 `docs/manual-datapack` 的章節再依 manifest 與 DataPack 程式補齊，不重寫；同時 cherry-pick 到 main，因為每日排程跑在 main，只合說明書，不把 v0.5～v0.6 的程式帶進 main（回滾點 tag `pre-merge-v0.6.0`）
+- 未完成：v0.6.0 tag 那次 CI 會維持紅色（tag 內容不變，重跑也一樣），下一個 tag 才會綠；APK 內的說明書要下一版才有這章。`docs/manual-datapack` 已被取代，可以刪；APK-DataPack 的 PROJECT_STATUS 還寫著未合併
+- 環境注意：本機 Python 跑 `--github` 會憑證失敗，要設 `SSL_CERT_FILE` 指向 Git 的 ca-bundle；`--local D:\dev` 會把 APK-VoiceHub-vocab worktree 當成別的 APP 而誤報
+
+### 2026-11-02／電腦 A
+- 完成：v0.6.0 分享圖片到海報工坊。模擬器驗證：分享畫面、離線時圖片留在佇列；multipart 格式用測試閘道驗證解得開
+- 決定＋原因：直接經 Tailscale 傳到 A，不走雲端硬碟（參考圖只放本機）；沿用派工暫存的補送時機，不加 WorkManager
+- 未驗證：手機實際傳到閘道（模擬器不在 tailnet），要等 65 號閘道換到 v0.8.0
+
+### 2026-11-01／電腦 A
+- 完成：分析 Claude Duet，寫出主動代理化的 PRD 方向稿 v0.1（功能對照、架構、子專案、資料、帳號、階段、決策 D1～D8）。沒有改程式
+- 決定＋原因：方向稿放中文資料夾，不進本 repo（repo 公開，文件含個人架構與帳號配置）
+- 放棄：直接把代理層塞進 APP（ColorOS 會凍結背景，帳號權杖也不該放手機）；以拉斐爾當核心（MiniMax 不能碰公務，週額度也曾用完）
+- 未完成：D1～D8 都未決定，尤其本檔 AGENTS.md 的「Never：用語音處理公務／個資」要倬決定是否修改
+- 發現：`main` 還在 v0.4.1；v0.5.0、v0.5.1 只在 `feat/project-planning`，另有 `feat/vocab-hub`、`docs/manual-datapack`、`docs/photobox-sort-start` 未合併
+- 環境注意：42 號中文資料夾不在 Git，方向稿目前只存在電腦 A
+
 ### 2026-10-26／電腦 A
 - 完成：v0.3.3～v0.4.0 音量鍵手勢在桌面叫不出的問題、「回家」常用地點與快速通道
 - 發現：OPPO Reno 14F（ColorOS）在 APP 背景時，音量廣播延遲 1～3 秒且會被合併（第一下遺失），在 APP 前景時正常；開「允許完全後台行為」、設預設數位助理都沒改善

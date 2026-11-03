@@ -33,6 +33,24 @@ object Places {
         return k.takeIf { it in places }
     }
 
+    /**
+     * 「去涮金鍋」「導航到台北車站」「騎車去學校」這種只講地點的句子，回傳地點，讓 APP 不經 AI 直接導航。
+     * 「去」後面接的是動作（去買牛奶、去繳費、去接小孩）、有提醒或時間的字眼、或是問句，都回 null 交給 AI。
+     */
+    fun goTo(utterance: String): String? {
+        val t = utterance.replace(Regex("[\\s，。！？!?、,.～~]"), "")
+            .replace(Regex("^(請|幫我|我要|我想|那就)+"), "")
+            .replace(Regex("(吧|囉|喔|了)$"), "")
+        if (Regex("提醒|待辦|記得|記一下|明天|今天|後天|下週|下禮拜|點|分鐘|小時").containsMatchIn(t)) return null
+        val m = Regex("^(?:導航|帶我)?(?:騎車|騎機車)?(?:去|到|前往)(.+)$").find(t)
+            ?: Regex("^導航(.+)$").find(t)
+            ?: return null
+        val place = m.groupValues[1]
+        if (place.length < 2 || place.length > 20) return null
+        if (Regex("^(年|過|哪|不|掉|除|死|吧|嗎|買|拿|繳|看|找|接|送|辦|寄|領|洗|剪|修|換|問|跟|和|把|幫|做|弄|上班|上課|上學|睡|吃飯|散步|運動|走走|逛逛|玩)").containsMatchIn(place)) return null
+        return place
+    }
+
     /** 「回家」「我家」「家裡」都視為「家」；「去公司」「到學校」去掉動詞 */
     fun key(raw: String): String = raw.trim()
         .removePrefix("導航")

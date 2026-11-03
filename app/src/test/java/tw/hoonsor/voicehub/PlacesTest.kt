@@ -45,4 +45,22 @@ class PlacesTest {
         }
         assertEquals("台北車站", OfflineParser.parse("導航到台北車站")!!.params.getString("destination"))
     }
+
+    @Test fun goToPlaceNavigatesDirectly() {
+        mapOf(
+            "去涮金鍋" to "涮金鍋",
+            "去台北車站" to "台北車站",
+            "導航到桃園機場" to "桃園機場",
+            "帶我去最近的全聯" to "最近的全聯",
+            "騎車去學校吧" to "學校",
+            "我要去涮金鍋。" to "涮金鍋",
+        ).forEach { (said, place) -> assertEquals(said, place, Places.goTo(said)) }
+    }
+
+    @Test fun goToLeavesActionsAndRemindersToAi() {
+        listOf(
+            "去買牛奶", "去繳電話費", "去接小孩", "去年的照片", "去哪裡吃飯", "提醒我去涮金鍋",
+            "明天去涮金鍋", "去上班", "去吃飯", "去", "打開LINE", "開車去桃園機場",
+        ).forEach { assertNull(it, Places.goTo(it)) }
+    }
 }

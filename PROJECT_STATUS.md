@@ -82,6 +82,12 @@
 5. 主動代理化：等倬決定 PRD 方向稿的 D1～D8（`D:\01-Project\42-語音總控制APP\docs\PRD-Duet化方向-v0.1.md`），先做 M0
 
 ## 交接紀錄
+### 2026-11-03／電腦 A（main 補齊 v0.5.0～v0.6.0）
+- 完成：`feat/project-planning` 合併進 main（5287e79），分支再快轉到 main，兩者一致。說明書沒有重複章節；`testProdDebugUnitTest` 通過
+- 決定＋原因：v0.5.0～v0.6.0 都已發正式版（tag），main 卻停在 v0.4.1，`latest` 測試版比正式版還舊；改成讓 main 等於已發布的程式。取代 11-02「只合說明書」的做法
+- 回滾：tag `pre-merge-main-2026-11-03`（合併前的 main，934b374）
+- 未完成：`feat/vocab-hub`（63 號）要自己把 main 合進去；`docs/manual-datapack`、`docs/photobox-sort-start` 已被取代，可刪（刪遠端分支要倬同意）
+
 ### 2026-11-02／電腦 A（說明書收錄賈維斯資料包）
 - 完成：MANUAL.md 新增「賈維斯資料包」一章 11 節（本分支 59e624b、main 934b374）。main 的 CI run 41463330344 的 manual 與 build 都綠；`--github` 檢查 124 節通過；Python 16、Android 91 個測試通過
 - 決定＋原因：沿用 `docs/manual-datapack` 的章節再依 manifest 與 DataPack 程式補齊，不重寫；同時 cherry-pick 到 main，因為每日排程跑在 main，只合說明書，不把 v0.5～v0.6 的程式帶進 main（回滾點 tag `pre-merge-v0.6.0`）

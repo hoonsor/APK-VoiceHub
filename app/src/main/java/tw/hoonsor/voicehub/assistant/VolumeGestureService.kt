@@ -195,6 +195,12 @@ class VolumeGestureService : Service() {
         core.reload()
         core.enabled = VolumeAccessibilityService.instance == null
         getSystemService(NotificationManager::class.java).notify(NOTIFY_ID, notification())
+        // 之前開過的無障礙服務不見了（多半是更新 APP 後被系統關掉）：在桌面、藍牙耳機按會叫不出，提醒一次
+        if (Graph.settings.volumeA11yWasOn && !VolumeAccessibilityService.isEnabledInSettings(this)) {
+            Graph.settings.volumeA11yWasOn = false
+            log("無障礙服務被關掉了（可能是更新 APP 後系統關閉的）")
+            tapNotification(this, "音量鍵的無障礙服務被系統關掉了（常發生在更新 APP 後），在桌面或用藍牙耳機按會叫不出。點這裡打開語音總控，到 設定 › 音量鍵叫出 重新開啟。")
+        }
         return START_STICKY
     }
 

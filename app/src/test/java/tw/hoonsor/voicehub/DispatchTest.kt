@@ -65,6 +65,28 @@ class DispatchTriggerTest {
         assertEquals(15, DispatchTrigger.statusQuery("十五號單的狀態"))
         assertNull(DispatchTrigger.statusQuery("派工，27 號專案跑一下收工"))
     }
+
+    @Test fun listQuery() {
+        for (s in listOf("我的派工單有哪些", "派工單狀態", "所有派工單的進度", "還有哪些派工單沒做完", "列出派工單")) {
+            assertTrue(s, DispatchTrigger.listQuery(s))
+        }
+        assertTrue(!DispatchTrigger.listQuery("第 12 號派工單進度如何"))
+        assertTrue(!DispatchTrigger.listQuery("派工，幫鬧鐘 APP 加一個貪睡次數上限"))
+        assertTrue(!DispatchTrigger.listQuery("派工，派工單網站要加一個清單頁可以列出每張單的狀態"))
+    }
+
+    @Test fun summarize() {
+        val arr = org.json.JSONArray()
+        fun t(id: Int, status: String, title: String) = arr.put(org.json.JSONObject().put("id", id).put("status", status).put("title", title))
+        t(3, "approved", "已核准的")
+        t(5, "awaiting_approval", "核准五")
+        t(9, "needs_info", "補充九")
+        t(7, "needs_info", "補充七")
+        val s = DispatchClient.summarize(arr)
+        assertTrue(s, s.startsWith("未完成的派工單有 4 張：需要你補充說明 2 張、等你核准 1 張、已核准 1 張。"))
+        assertTrue(s, s.contains("第 9 號（需要你補充說明）補充九；第 7 號（需要你補充說明）補充七；第 5 號（等你核准）核准五"))
+        assertEquals("目前沒有未完成的派工單。", DispatchClient.summarize(org.json.JSONArray()))
+    }
 }
 
 class DispatchResponseTest {

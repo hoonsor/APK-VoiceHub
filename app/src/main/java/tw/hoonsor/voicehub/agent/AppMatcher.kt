@@ -24,6 +24,14 @@ object AppMatcher {
         "賴" to listOf("LINE"),
     )
 
+    /**
+     * 泛稱指定給倬自己的 APP：有裝就直接開它，不跟名稱裡剛好有這些字的 APP（例如系統的「音樂」）比分數。
+     * 沒裝才照一般方式比對。key 用 normalize 後的字。
+     */
+    private val preferred = mapOf(
+        "SoundFlow" to listOf("音樂播放器", "播放器", "音樂播放軟體", "音樂播放程式", "音樂軟體", "播放軟體", "podcast", "播客"),
+    ).flatMap { (target, keys) -> keys.map { normalize(it) to target } }.toMap()
+
     fun normalize(s: String): String = s.lowercase()
         .replace(Regex("[\\s・·._\\-]+"), "")
         .removeSuffix("app")
@@ -49,6 +57,10 @@ object AppMatcher {
 
     /** 回傳依分數排序的候選（分數 > 0） */
     fun rank(query: String, entries: List<Entry>): List<Pair<Entry, Int>> {
+        preferred[normalize(query)]?.let { target ->
+            val own = entries.map { it to score(target, it.label) }.filter { it.second >= 85 }.sortedByDescending { it.second }
+            if (own.isNotEmpty()) return own
+        }
         val queries = listOf(query) + (aliases[query.trim()] ?: emptyList())
         return entries.map { e -> e to queries.maxOf { score(it, e.label) } }
             .filter { it.second > 0 }

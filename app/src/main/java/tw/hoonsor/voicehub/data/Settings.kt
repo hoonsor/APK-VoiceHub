@@ -89,6 +89,10 @@ class Settings(context: Context) {
     var volumeSpeed: String
         get() = p.getString("volumeSpeed", "FAST") ?: "FAST"
         set(v) = p.edit().putString("volumeSpeed", v).apply()
+    /** 音量鍵的無障礙服務曾經開過；之後發現被關掉（ColorOS 更新 APP 後常這樣）就提醒一次 */
+    var volumeA11yWasOn: Boolean
+        get() = p.getBoolean("volumeA11yWasOn", false)
+        set(v) = p.edit().putBoolean("volumeA11yWasOn", v).apply()
     /** 回覆後自動再聽（連續對話） */
     var autoListen: Boolean
         get() = p.getBoolean("autoListen", false)

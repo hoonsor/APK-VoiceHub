@@ -86,6 +86,9 @@ class Orchestrator(
         DispatchTrigger.statusQuery(utterance)?.let { id ->
             return runDirect(utterance, "dispatch_status", JSONObject().put("id", id), onEvent)
         }
+        if (DispatchTrigger.listQuery(utterance)) {
+            return runDirect(utterance, "dispatch_status", JSONObject(), onEvent)
+        }
         DispatchTrigger.parse(utterance)?.let { req ->
             if (req.text.isEmpty()) {
                 awaitingDispatch = req

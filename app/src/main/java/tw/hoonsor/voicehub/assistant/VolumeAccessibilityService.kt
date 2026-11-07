@@ -24,6 +24,7 @@ class VolumeAccessibilityService : AccessibilityService() {
             it.register()
         }
         instance = this
+        Graph.settings.volumeA11yWasOn = true
         VolumeGestureService.log("無障礙服務已啟用")
         VolumeGestureService.sync(this) // 讓前台服務停止重複處理
     }

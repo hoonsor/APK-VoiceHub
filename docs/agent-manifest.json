@@ -409,20 +409,21 @@
     {
       "examples": [
         "第 12 號派工單進度如何",
-        "12 號單做好了沒"
+        "12 號單做好了沒",
+        "我的派工單有哪些"
       ],
       "name": "dispatch_status",
-      "description": "查詢某張派工單目前的狀態。",
+      "description": "查詢派工網站上派工單的狀態。給 id 查某一張；不給 id 唸全部未完成的單（各狀態張數與等使用者處理的單）。",
       "risk": "read",
       "title": "查派工單",
       "params": {
         "type": "object",
         "properties": {"id": {
-          "description": "派工單編號",
+          "description": "派工單編號；要查全部未完成的單就不要給",
           "type": "integer",
           "minimum": 1
         }},
-        "required": ["id"]
+        "required": []
       }
     }
   ]

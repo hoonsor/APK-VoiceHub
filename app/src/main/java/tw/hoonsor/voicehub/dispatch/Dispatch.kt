@@ -62,6 +62,16 @@ object DispatchTrigger {
         return tw.hoonsor.voicehub.agent.ChineseNumber.parse(m.groupValues[1])
     }
 
+    private val listWords = Regex("哪些|幾張|狀態|進度|清單|列出|沒做完|未完成|還有|待處理|總覽|有什麼")
+
+    /** 「我的派工單有哪些」「派工單狀態」：沒指定單號、要看全部未完成的單。要先於 [parse] 判斷（「派工單…」也以「派工」開頭） */
+    fun listQuery(utterance: String): Boolean {
+        val t = utterance.replace(Regex("[\\s，,。.？?！!]+"), "")
+        if (t.length > 20 || ticketNo.containsMatchIn(t)) return false
+        if (!t.contains("工單")) return false
+        return listWords.containsMatchIn(t)
+    }
+
     const val MAX_LENGTH = 5000
 }
 
@@ -139,8 +149,19 @@ class DispatchClient(private val baseUrl: () -> String) {
         }
     }
 
+    /** 還沒完成的派工單（派工網站 GET /api/tickets?status=…，不含已完成與已取消） */
+    suspend fun openTickets(): Result<JSONArray> = withContext(Dispatchers.IO) {
+        runCatching {
+            val r = http("GET", "/api/tickets?status=" + OPEN_STATUSES.joinToString(","), null)
+            if (r.code !in 200..299) error(errorOf(r.body) ?: "HTTP ${r.code}")
+            JSONObject(r.body).optJSONArray("tickets") ?: JSONArray()
+        }
+    }
+
     companion object {
         const val SOURCE_APP = "voice-control"
+        /** 要倬處理的排前面 */
+        val OPEN_STATUSES = listOf("needs_info", "awaiting_approval", "new", "approved", "in_progress")
         const val DEFAULT_BASE = "https://hoonsoropenclaw.tail71361e.ts.net"
 
         fun errorOf(body: String): String? = runCatching { JSONObject(body).optString("error").ifBlank { null } }.getOrNull()
@@ -157,6 +178,22 @@ class DispatchClient(private val baseUrl: () -> String) {
             in 400..499 -> DispatchOutcome.Rejected(errorOf(body) ?: "HTTP $code")
             // 5xx：伺服器暫時有問題，當成連不上，暫存補送
             else -> DispatchOutcome.Offline("HTTP $code")
+        }
+
+        /** 唸給倬聽的總覽：各狀態幾張，再唸要你處理（補充說明、核准）的最新 3 張。純邏輯，有 JVM 測試 */
+        fun summarize(tickets: JSONArray): String {
+            val list = (0 until tickets.length()).mapNotNull { tickets.optJSONObject(it) }
+            if (list.isEmpty()) return "目前沒有未完成的派工單。"
+            val counts = OPEN_STATUSES.mapNotNull { s -> list.count { it.optString("status") == s }.takeIf { it > 0 }?.let { "${statusText(s)} $it 張" } }
+            val mine = list.filter { it.optString("status") in setOf("needs_info", "awaiting_approval") }
+                .sortedWith(compareBy<JSONObject> { OPEN_STATUSES.indexOf(it.optString("status")) }.thenByDescending { it.optInt("id") })
+            val head = "未完成的派工單有 ${list.size} 張：" + counts.joinToString("、") + "。"
+            if (mine.isEmpty()) return head
+            val items = mine.take(3).joinToString("；") { t ->
+                val title = t.optString("title").let { if (it.length > 20) it.take(20) + "…" else it }
+                "第 ${t.optInt("id")} 號（${statusText(t.optString("status"))}）$title"
+            }
+            return head + "等你處理的" + (if (mine.size > 3) "最新 3 張" else "有") + "：" + items + "。詳細內容請到派工網站看。"
         }
 
         /** 派工單狀態的中文 */

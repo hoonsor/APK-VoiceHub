@@ -120,6 +120,22 @@ class AppMatcherTest {
     @Test fun none() {
         assertTrue(AppMatcher.match("Instagram", apps) is AppMatcher.Match.None)
     }
+
+    @Test fun musicPlayerPrefersSoundFlow() {
+        val withPlayers = apps + AppMatcher.Entry("音樂", "com.heytap.music") + AppMatcher.Entry("SoundFlow", "tw.hoonsor.soundflow")
+        for (q in listOf("音樂播放器", "播放器", "音樂播放軟體", "音樂播放器 APP")) {
+            val m = AppMatcher.match(q, withPlayers)
+            assertTrue(q, m is AppMatcher.Match.One && m.entry.packageName == "tw.hoonsor.soundflow")
+        }
+        // 直接講「音樂」還是開系統的音樂
+        val music = AppMatcher.match("音樂", withPlayers)
+        assertTrue(music is AppMatcher.Match.One && music.entry.packageName == "com.heytap.music")
+    }
+
+    @Test fun musicPlayerFallsBackWithoutSoundFlow() {
+        val m = AppMatcher.match("音樂播放器", apps + AppMatcher.Entry("音樂", "com.heytap.music"))
+        assertTrue(m is AppMatcher.Match.One && m.entry.packageName == "com.heytap.music")
+    }
 }
 
 class PlannerTest {

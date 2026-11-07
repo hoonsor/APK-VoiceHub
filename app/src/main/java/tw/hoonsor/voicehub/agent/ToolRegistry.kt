@@ -158,7 +158,14 @@ class ToolRegistry(private val context: Context) {
             }
             "dispatch_status" -> {
                 val id = params.optInt("id", -1)
-                if (id <= 0) return AgentResult.fail(AgentApi.INVALID_PARAMS, "要查第幾號派工單？")
+                if (id <= 0) {
+                    // 沒給單號：唸全部未完成的單
+                    if (dryRun) return AgentResult.ok("（試跑）會查詢所有未完成的派工單")
+                    return service.client.openTickets().fold(
+                        onSuccess = { AgentResult.ok(DispatchClient.summarize(it), JSONObject().put("count", it.length())) },
+                        onFailure = { AgentResult.fail(AgentApi.UNAVAILABLE, "派工網站連不上，請確認 Tailscale 有開。") },
+                    )
+                }
                 if (dryRun) return AgentResult.ok("（試跑）會查詢第 $id 號派工單")
                 service.client.ticket(id).fold(
                     onSuccess = { t ->

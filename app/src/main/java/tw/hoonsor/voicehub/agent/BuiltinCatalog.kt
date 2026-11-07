@@ -127,9 +127,9 @@ object BuiltinCatalog {
             listOf("派工，幫鬧鐘 APP 加一個貪睡次數上限", "我有個點子，做一個記帳工具可以拍收據", "叫利姆路把 27 號專案跑一下收工"),
         ),
         ActionSpec(
-            "dispatch_status", "查派工單", "查詢某張派工單目前的狀態。", Risk.READ,
-            obj("id" to int("派工單編號", 1), required = listOf("id")),
-            listOf("第 12 號派工單進度如何", "12 號單做好了沒"),
+            "dispatch_status", "查派工單", "查詢派工網站上派工單的狀態。給 id 查某一張；不給 id 唸全部未完成的單（各狀態張數與等使用者處理的單）。", Risk.READ,
+            obj("id" to int("派工單編號；要查全部未完成的單就不要給", 1)),
+            listOf("第 12 號派工單進度如何", "12 號單做好了沒", "我的派工單有哪些"),
         ),
     )
 

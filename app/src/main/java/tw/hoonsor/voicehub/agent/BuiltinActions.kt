@@ -259,8 +259,19 @@ class BuiltinActions(private val context: Context) {
         val max = am.getStreamMaxVolume(type)
         val before = am.getStreamVolume(type)
         val target = (max * percent.coerceIn(0, 100) / 100.0).let { Math.round(it).toInt() }
-        am.setStreamVolume(type, target, AudioManager.FLAG_SHOW_UI)
         val name = mapOf("media" to "媒體", "ring" to "鈴聲", "alarm" to "鬧鐘", "notification" to "通知")[stream] ?: "媒體"
+        runCatching { am.setStreamVolume(type, target, AudioManager.FLAG_SHOW_UI) }
+            .onFailure { return AgentResult.fail(AgentApi.INTERNAL, "系統不允許調整${name}音量（${it.javaClass.simpleName}）") }
+        // 系統可能不照做（耳機的安全音量上限、勿擾、藍牙絕對音量），讀回來確認，不要謊報成功
+        val after = am.getStreamVolume(type)
+        if (after != target) {
+            val now = if (max == 0) 0 else after * 100 / max
+            return AgentResult.fail(
+                AgentApi.INTERNAL,
+                if (after == before) "${name}音量沒有變（還是 $now%），系統沒有套用；接著耳機時，Android 會擋下超過安全音量的調高，請用音量鍵調"
+                else "${name}音量只調到 $now%，系統沒有完全套用（目標 $percent%）",
+            )
+        }
         return AgentResult.ok(
             "${name}音量已調到 $percent%",
             undo = JSONObject().put("action", "volume_set")

@@ -129,8 +129,9 @@ class AssistantViewModel : ViewModel() {
             Recording.Silence -> { add { id -> Msg.Note(id, "沒聽到聲音") }; null }
             is Recording.Speech -> {
                 _state.update { it.copy(mode = Mode.TRANSCRIBING, level = 0f) }
+                val prompt = sttPrompt(runCatching { Graph.registry.builtin.launchableApps().map { it.label } }.getOrDefault(emptyList()))
                 try {
-                    LlmClient.transcribe(settings.groqBaseUrl, settings.groqKey!!, settings.sttModel, rec.wav, STT_PROMPT)
+                    LlmClient.transcribe(settings.groqBaseUrl, settings.groqKey!!, settings.sttModel, rec.wav, prompt)
                         .let(::cleanTranscript)
                         .ifBlank { add { id -> Msg.Note(id, "沒聽清楚，請再說一次") }; null }
                 } catch (e: AiException) {
@@ -205,6 +206,20 @@ class AssistantViewModel : ViewModel() {
     private companion object {
         /** 給 Whisper 的提示：要繁體中文、台灣用語 */
         const val STT_PROMPT = "以下是台灣繁體中文的手機語音指令，例如：打開LINE、明天早上七點叫我、計時五分鐘、手電筒打開。"
+
+        /** 常講的英文名稱：Whisper 沒看過拼法時常聽成別的字 */
+        private val STT_WORDS = listOf(
+            "Tailscale", "SoundFlow", "Obtainium", "LINE", "YouTube", "Spotify", "KKBOX", "Gmail", "Chrome",
+            "Google", "Claude", "Gemini", "ChatGPT", "GitHub", "Telegram", "Podcast", "NotebookLM", "Wi-Fi",
+        )
+
+        /** 提示詞加上英文名稱，連手機上名稱含英文的 APP（最多 15 個，Whisper 提示有長度上限） */
+        fun sttPrompt(appLabels: List<String>): String {
+            val installed = appLabels.filter { l -> l.length in 2..20 && l.any { it in 'A'..'Z' || it in 'a'..'z' } }
+                .filter { l -> STT_WORDS.none { it.equals(l, ignoreCase = true) } }
+                .take(15)
+            return STT_PROMPT + "常用名稱：" + (STT_WORDS + installed).joinToString("、") + "。"
+        }
 
         /** Whisper 在無聲時常幻聽出的句子 */
         private val hallucinations = listOf("請不吝點贊", "訂閱", "字幕由", "謝謝觀看", "明鏡與點點")

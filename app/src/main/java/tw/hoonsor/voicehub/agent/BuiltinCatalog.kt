@@ -117,6 +117,11 @@ object BuiltinCatalog {
             listOf("下週三下午兩點開人事會議", "明天整天請假"),
         ),
         ActionSpec(
+            "calendar_agenda", "查行程", "唸出某一天的行事曆行程（只在手機上整理，內容不給 AI）。day＝距離今天幾天：0 今天、1 明天、2 後天。回覆時直接唸 summary，不要改寫。", Risk.READ,
+            obj("day" to int("距離今天幾天，0＝今天、1＝明天，最多 20", 0, 20)),
+            listOf("明天有什麼行程", "今天要做什麼", "下週三有什麼活動"),
+        ),
+        ActionSpec(
             "battery_status", "電池狀態", "查詢電量與是否充電中。", Risk.READ,
             obj(),
             listOf("還剩多少電", "有在充電嗎"),
@@ -134,6 +139,8 @@ object BuiltinCatalog {
     )
 
     val DISPATCH_ACTIONS = setOf("dispatch_send", "dispatch_status")
+    /** 結果含個人資料：不給 AI 看、不記進對話紀錄、只用手機內建聲音唸 */
+    val PRIVATE_ACTIONS = setOf("calendar_agenda")
 
     fun catalog(packageName: String, version: String) = AgentCatalog(
         app = APP_NAME,

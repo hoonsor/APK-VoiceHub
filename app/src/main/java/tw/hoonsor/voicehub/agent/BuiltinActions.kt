@@ -50,6 +50,7 @@ class BuiltinActions(private val context: Context) {
                 "settings_open" -> settingsOpen(params.getString("page"))
                 "calendar_event_add" -> calendarAdd(params)
                 "battery_status" -> battery()
+                "calendar_agenda" -> calendarAgenda(params.optInt("day", 0).coerceIn(0, 20))
                 else -> AgentResult.fail(AgentApi.NOT_FOUND, "沒有這個動作：$action")
             }
         } catch (e: ActivityNotFoundException) {
@@ -331,6 +332,17 @@ class BuiltinActions(private val context: Context) {
         p.optString("location").takeIf { it.isNotBlank() }?.let { intent.putExtra(CalendarContract.Events.EVENT_LOCATION, it) }
         start(intent)
         return leaves("已打開行事曆新增畫面，請確認後按儲存")
+    }
+
+    private fun calendarAgenda(day: Int): AgentResult {
+        if (!tw.hoonsor.voicehub.calendar.CalendarReader.hasPermission(context)) {
+            return AgentResult.fail(AgentApi.PERMISSION_DENIED, "還沒允許讀取行事曆，請到 語音總控 › 設定 › 明天行程提醒 按「允許」")
+        }
+        val today = java.time.LocalDate.now()
+        val date = today.plusDays(day.toLong())
+        val events = tw.hoonsor.voicehub.calendar.CalendarReader.events(context, date, tw.hoonsor.voicehub.Graph.settings.briefExcluded)
+        val b = tw.hoonsor.voicehub.calendar.CalendarBrief.compose(date, today, events)
+        return AgentResult.ok(b.spoken, JSONObject().put("count", b.count))
     }
 
     private fun battery(): AgentResult {

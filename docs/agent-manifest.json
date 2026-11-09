@@ -374,6 +374,27 @@
     },
     {
       "examples": [
+        "明天有什麼行程",
+        "今天要做什麼",
+        "下週三有什麼活動"
+      ],
+      "name": "calendar_agenda",
+      "description": "唸出某一天的行事曆行程（只在手機上整理，內容不給 AI）。day＝距離今天幾天：0 今天、1 明天、2 後天。回覆時直接唸 summary，不要改寫。",
+      "risk": "read",
+      "title": "查行程",
+      "params": {
+        "type": "object",
+        "properties": {"day": {
+          "description": "距離今天幾天，0＝今天、1＝明天，最多 20",
+          "maximum": 20,
+          "type": "integer",
+          "minimum": 0
+        }},
+        "required": []
+      }
+    },
+    {
+      "examples": [
         "還剩多少電",
         "有在充電嗎"
       ],

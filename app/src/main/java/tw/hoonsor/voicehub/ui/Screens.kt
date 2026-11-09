@@ -559,6 +559,9 @@ fun SettingsScreen() {
         SectionTitle("音量鍵叫出（藍牙耳機也可以）")
         VolumeGestureCard()
 
+        SectionTitle("明天行程提醒")
+        DailyBriefCard()
+
         Row(verticalAlignment = Alignment.CenterVertically) {
             OutlineButton("儲存", icon = Glyph.Check, primary = true) { save() }
             Spacer(Modifier.size(10.dp))

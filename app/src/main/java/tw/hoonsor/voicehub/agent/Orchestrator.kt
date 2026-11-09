@@ -13,6 +13,8 @@ import tw.hoonsor.voicehub.ai.PlannedCall
 import tw.hoonsor.voicehub.ai.Planner
 import tw.hoonsor.voicehub.data.Settings
 import tw.hoonsor.voicehub.dispatch.DispatchTrigger
+import tw.hoonsor.voicehub.calendar.CalendarTrigger
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 /**
@@ -42,6 +44,8 @@ class Orchestrator(
         val expectsAnswer: Boolean = false,
         /** 正在等確認 */
         val confirming: Boolean = false,
+        /** 內容含個人資料（行事曆）：只用手機內建聲音唸、不記進給 AI 的對話紀錄 */
+        val private: Boolean = false,
     )
 
     private data class Pending(val call: PlannedCall, val token: String, val utterance: String)
@@ -96,6 +100,11 @@ class Orchestrator(
                 return remember(utterance, Reply(ask, expectsAnswer = true))
             }
             return runDirect(utterance, "dispatch_send", JSONObject().put("text", req.payload), onEvent)
+        }
+
+        // 「明天有什麼行程」：行事曆內容只在手機上整理，不經 AI
+        CalendarTrigger.parse(utterance, LocalDate.now())?.let { day ->
+            return runDirect(utterance, "calendar_agenda", JSONObject().put("day", day), onEvent)
         }
 
         // 「回家」這類常用地點不用問 AI，直接導航（省掉一次 AI 往返）
@@ -160,13 +169,14 @@ class Orchestrator(
             }
 
             // 派工的回覆一律照伺服器的 message 唸，不再交給 AI 改寫
-            val needsFollowUp = !offline && round < 2 && results.none { it.first.action in BuiltinCatalog.DISPATCH_ACTIONS } && results.any { (c, r) ->
+            val private = results.any { it.first.action in BuiltinCatalog.PRIVATE_ACTIONS }
+            val needsFollowUp = !offline && !private && round < 2 && results.none { it.first.action in BuiltinCatalog.DISPATCH_ACTIONS } && results.any { (c, r) ->
                 (!r.ok && r.errorCode != AgentApi.NEEDS_UI) ||
                     (registry.riskOf(c.target, c.action) == Risk.READ && registry.catalogFor(c.target)?.builtin != true) ||
                     c.action == "app_list"
             }
             if (!needsFollowUp) {
-                return remember(utterance, Reply(localSummary(results), leaves, expectsAnswer = results.any { !it.second.ok }))
+                return remember(utterance, Reply(localSummary(results), leaves, expectsAnswer = results.any { !it.second.ok }, private = private))
             }
 
             onEvent(Event.PhaseChanged(Phase.THINKING))
@@ -215,7 +225,7 @@ class Orchestrator(
         val call = PlannedCall(registry.selfPackage, action, params)
         val r = registry.execute(call.target, action, params, utterance = utterance)
         onEvent(Event.ActionDone(titleOf(call), r))
-        return remember(utterance, Reply(localSummary(listOf(call to r)), r.data?.optBoolean("leavesApp") == true))
+        return remember(utterance, Reply(localSummary(listOf(call to r)), r.data?.optBoolean("leavesApp") == true, private = action in BuiltinCatalog.PRIVATE_ACTIONS))
     }
 
     private suspend fun confirm(p: Pending, onEvent: (Event) -> Unit): Reply {
@@ -260,7 +270,8 @@ class Orchestrator(
     /** 記住最近幾輪對話（「再加五分鐘」這種接續指令需要上下文） */
     private fun remember(utterance: String, reply: Reply): Reply {
         history += ChatMessage("user", utterance)
-        history += ChatMessage("assistant", JSONObject().put("say", reply.text).put("calls", JSONArray()).toString())
+        val said = if (reply.private) "（已在手機上唸出行程，內容不保留）" else reply.text
+        history += ChatMessage("assistant", JSONObject().put("say", said).put("calls", JSONArray()).toString())
         while (history.size > MAX_HISTORY * 2) history.removeFirst()
         return reply
     }

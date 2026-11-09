@@ -190,7 +190,7 @@ class AssistantViewModel : ViewModel() {
 
         if (settings.ttsEnabled) {
             _state.update { it.copy(mode = Mode.SPEAKING) }
-            Graph.speaker.speak(reply.text, settings.speechRate)
+            Graph.speaker.speak(reply.text, settings.speechRate, allowCloud = !reply.private || settings.briefCloudVoice)
         }
         when {
             // 已跳到別的 APP：不在背景再聽（Android 也不允許背景錄音）

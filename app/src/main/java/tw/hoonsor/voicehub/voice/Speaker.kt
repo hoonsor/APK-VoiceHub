@@ -87,10 +87,11 @@ class Speaker(context: Context) {
     }
 
     /** 唸完才回來；引擎 3 秒內沒準備好就跳過（不讓對話卡住） */
-    suspend fun speak(text: String, rate: Float) {
+    /** [allowCloud]＝false 時只用手機內建聲音（行事曆這類不該送出手機的內容） */
+    suspend fun speak(text: String, rate: Float, allowCloud: Boolean = true, waitMs: Long = 3_000) {
         if (text.isBlank()) return
-        if (cloudAvailable() && speakCloud(text, rate)) return
-        if (!awaitReady()) return
+        if (allowCloud && cloudAvailable() && speakCloud(text, rate)) return
+        if (!awaitReady(waitMs)) return
         val t = tts ?: return
         speakWith(t, text, rate)
     }

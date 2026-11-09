@@ -116,6 +116,31 @@ class Settings(context: Context) {
         get() = p.getBoolean("autoClose", true)
         set(v) = p.edit().putBoolean("autoClose", v).apply()
 
+    // ---- 明天行程提醒（只在手機上整理與朗讀，不送 AI） ----
+    var briefEnabled: Boolean
+        get() = p.getBoolean("briefEnabled", false)
+        set(v) = p.edit().putBoolean("briefEnabled", v).apply()
+    /** 每天幾點唸，從午夜算起的分鐘數（預設 21:00） */
+    var briefMinute: Int
+        get() = p.getInt("briefMinute", 21 * 60)
+        set(v) = p.edit().putInt("briefMinute", v.coerceIn(0, 24 * 60 - 1)).apply()
+    /** 明天是星期六、日時也唸 */
+    var briefWeekend: Boolean
+        get() = p.getBoolean("briefWeekend", true)
+        set(v) = p.edit().putBoolean("briefWeekend", v).apply()
+    /** 明天沒有行程時也唸「明天沒有行程」 */
+    var briefWhenEmpty: Boolean
+        get() = p.getBoolean("briefWhenEmpty", true)
+        set(v) = p.edit().putBoolean("briefWhenEmpty", v).apply()
+    /** 行程用 MiniMax 雲端聲音唸（預設關：行程內容會送到 MiniMax 國際版） */
+    var briefCloudVoice: Boolean
+        get() = p.getBoolean("briefCloudVoice", false)
+        set(v) = p.edit().putBoolean("briefCloudVoice", v).apply()
+    /** 不要唸的行事曆 id */
+    var briefExcluded: Set<Long>
+        get() = p.getStringSet("briefExcluded", emptySet()).orEmpty().mapNotNull { it.toLongOrNull() }.toSet()
+        set(v) = p.edit().putStringSet("briefExcluded", v.map { it.toString() }.toSet()).apply()
+
     // ---- 語音派工（利姆路 raphael-dispatch，經 Tailscale，不需金鑰） ----
     var dispatchBaseUrl: String
         get() = p.getString("dispatchBaseUrl", DEFAULT_DISPATCH_BASE) ?: DEFAULT_DISPATCH_BASE

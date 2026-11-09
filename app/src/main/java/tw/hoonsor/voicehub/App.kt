@@ -51,6 +51,8 @@ class App : Application() {
     override fun onCreate() {
         super.onCreate()
         Graph.init(this)
+        // 每次 APP 啟動都重排一次明天行程提醒（ColorOS 可能清掉排程）
+        runCatching { tw.hoonsor.voicehub.calendar.DailyBrief.sync(this) }
         // 英文 APP 名稱依發音比對：中文轉拼音用系統內建的 ICU
         runCatching {
             val tr = android.icu.text.Transliterator.getInstance("Han-Latin; Latin-ASCII")

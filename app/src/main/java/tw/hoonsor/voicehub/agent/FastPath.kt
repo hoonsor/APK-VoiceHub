@@ -27,14 +27,21 @@ object FastPath {
     private val timer = Regex("^(?:幫我)?(?:設|設定|開始)?(?:一個)?(?:計時|倒數計時|倒數)(?:器)?($num(?:個)?(?:小時|鐘頭|分鐘|分|秒)(?:$num(?:分鐘|分|秒))?半?|半小時)$|^($num(?:個)?(?:小時|鐘頭|分鐘|分|秒)(?:$num(?:分鐘|分|秒))?半?|半小時)(?:的)?(?:計時|倒數計時|倒數)(?:器)?$")
     private val alarmDateWords = Regex("明天|後天|今天|今晚以後|星期|禮拜|週|周|每天|每日|平日|假日|號|月")
     private val alarm = Regex("^(?:幫我)?(?:設|設定|定)?(?:一個)?(?:鬧鐘)?(早上|上午|中午|下午|傍晚|晚上|今晚|凌晨|半夜)?($num[點点](?:半|一刻|三刻|${num}分?)?|[0-9]{1,2}[:：][0-9]{2})(?:的)?(?:叫我|叫醒我|叫我起床|鬧鐘|的鬧鐘)$")
-    private val battery = Regex("^(?:手機)?(?:還)?(?:剩|有)?(?:多少電|幾趴電|電量)(?:多少|還剩多少)?$|^電量$")
+    /** 查電量是唯讀動作，句型放寬：短句裡有電量字眼、又沒有設定或其他動作就算（v0.8.0 太嚴，「電池還剩多少」會掉到 AI） */
+    private val batteryAsk = Regex("電量|電池|多少電|幾趴|還有電|剩多少電")
+    private val batteryBlock = Regex("設定|省電|最佳化|優化|模式|充電器|然後|接著|順便|再|和|跟|打開|開啟|關|設|調|為什麼|怎麼")
 
     /** 開 APP 的名稱（只抓名稱，找不找得到 APP 由呼叫端判斷） */
     private val appOpen = Regex("^(?:幫我|請)?(?:打開|開啟|啟動|開)(.{1,20}?)(?:APP|app|應用程式)?$")
 
     fun match(raw: String): OfflineParser.Call? {
         val t = OfflineParser.normalize(raw)
-        if (t.isEmpty() || t.length > 24 || compound.containsMatchIn(t)) return null
+        if (t.isEmpty() || t.length > 24) return null
+        // 電量在複合字詞檢查之前：「電量還有多少呢」「還有電嗎」這種問句也要快
+        if (t.length <= 14 && batteryAsk.containsMatchIn(t) && !batteryBlock.containsMatchIn(t)) {
+            return OfflineParser.Call("battery_status", JSONObject())
+        }
+        if (compound.containsMatchIn(t)) return null
 
         flashlight.find(t)?.let { m ->
             val verb = m.groupValues[1].ifEmpty { m.groupValues[2] }
@@ -63,8 +70,6 @@ object FastPath {
         if (!alarmDateWords.containsMatchIn(t) && alarm.matches(t)) {
             OfflineParser.clockTime(t)?.let { (h, m) -> return OfflineParser.Call("alarm_set", JSONObject().put("hour", h).put("minute", m)) }
         }
-
-        if (battery.matches(t)) return OfflineParser.Call("battery_status", JSONObject())
 
         appOpen.find(t)?.let { m ->
             val name = m.groupValues[1].trim()

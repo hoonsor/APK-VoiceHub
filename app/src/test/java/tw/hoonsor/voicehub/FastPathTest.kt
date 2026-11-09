@@ -2,6 +2,7 @@ package tw.hoonsor.voicehub
 
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -30,6 +31,9 @@ class FastPathTest {
         assertEquals(30, a.params.getInt("minute"))
         assertEquals(21, FastPath.match("晚上九點的鬧鐘")!!.params.getInt("hour"))
         assertEquals("battery_status", action("還剩多少電"))
+        for (q in listOf("電池還剩多少", "手機電量還有多少", "現在電量多少", "查一下電量", "還有電嗎", "電量還有多少呢", "剩幾趴")) {
+            assertEquals(q, "battery_status", action(q))
+        }
         assertEquals("音樂播放器", FastPath.match("打開音樂播放器")!!.params.getString("name"))
         assertEquals("tailscale", FastPath.match("開啟tailscale")!!.params.getString("name"))
     }
@@ -44,6 +48,9 @@ class FastPathTest {
         assertNull(action("開燈"))
         assertNull(action("今天天氣如何"))
         assertNull(action("手電筒怎麼開"))
+        assertNotEquals("battery_status", action("打開電池設定")) // 交給開 APP 比對，不當成查電量
+        assertNotEquals("battery_status", action("開啟省電模式"))
+        assertNull(action("電池為什麼耗電這麼快"))
     }
 
     @Test fun appOpenNeedsConfidentMatch() {

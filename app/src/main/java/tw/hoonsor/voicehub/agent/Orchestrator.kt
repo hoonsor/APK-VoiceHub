@@ -107,6 +107,9 @@ class Orchestrator(
             return runDirect(utterance, "map_navigate", JSONObject().put("destination", place), onEvent)
         }
 
+        // 常用的簡單指令不問 AI（開 APP、音量、手電筒、計時、今天的鬧鐘…）
+        fastCall(utterance)?.let { call -> return runFast(utterance, call, onEvent) }
+
         onEvent(Event.PhaseChanged(Phase.THINKING))
         val messages = mutableListOf(ChatMessage("system", Planner.systemPrompt(registry.catalogs.value, LocalDateTime.now(), Places.parse(settings.places).keys)))
         messages += history
@@ -182,6 +185,29 @@ class Orchestrator(
     /** 鬧鐘／計時改送倬的鬧鐘、套用一次性規則（AlarmRouting） */
     private fun adjusted(plan: Plan, utterance: String): Plan =
         plan.copy(calls = plan.calls.map { AlarmRouting.adjust(it, registry.catalogs.value, utterance) })
+
+    /** 本機就能確定的指令；開 APP 要找得到很像的 APP 才算 */
+    private fun fastCall(utterance: String): PlannedCall? {
+        val c = FastPath.match(utterance) ?: return null
+        if (c.action == "app_open") {
+            val entry = FastPath.confidentApp(c.params.getString("name"), runCatching { registry.builtin.launchableApps() }.getOrDefault(emptyList()))
+                ?: return null
+            // 直接用找到的 APP 名稱開，避免同一個名稱再比對一次出現不同結果
+            return PlannedCall(registry.selfPackage, "app_open", JSONObject().put("name", entry.label))
+        }
+        return AlarmRouting.adjust(PlannedCall(registry.selfPackage, c.action, c.params), registry.catalogs.value, utterance)
+    }
+
+    private suspend fun runFast(utterance: String, call: PlannedCall, onEvent: (Event) -> Unit): Reply {
+        onEvent(Event.PhaseChanged(Phase.EXECUTING))
+        val r = registry.execute(call.target, call.action, call.params, utterance = utterance).let { r ->
+            val note = if (r.ok) AlarmRouting.fallbackNote(call.action, registry.resolve(call.target, call.action)?.builtin == true, utterance) else null
+            if (note == null) r else r.copy(summary = r.summary.ifBlank { "${titleOf(call)}完成" } + "；" + note)
+        }
+        onEvent(Event.ActionDone(titleOf(call), r))
+        if (r.errorCode == AgentApi.NEEDS_UI) openUi(r)
+        return remember(utterance, Reply(localSummary(listOf(call to r)), r.data?.optBoolean("leavesApp") == true, expectsAnswer = !r.ok))
+    }
 
     /** 不經 AI 直接執行一個內建動作，回覆就是動作的 summary（派工時＝伺服器的 message） */
     private suspend fun runDirect(utterance: String, action: String, params: JSONObject, onEvent: (Event) -> Unit): Reply {

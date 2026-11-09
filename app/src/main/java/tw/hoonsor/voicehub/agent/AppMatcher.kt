@@ -1,7 +1,7 @@
 package tw.hoonsor.voicehub.agent
 
 /**
- * 用名稱找 APP：完全相同 > 開頭相同 > 包含 > 字元重疊。
+ * 用名稱找 APP：完全相同 > 開頭相同 > 包含 > 發音相同（英文名稱，[Phonetic]）> 字元重疊。
  * 純邏輯，有 JVM 測試（AppMatcherTest）。
  */
 object AppMatcher {
@@ -50,7 +50,7 @@ object AppMatcher {
             else -> {
                 val overlap = q.toSet().intersect(l.toSet()).size
                 val ratio = overlap.toDouble() / maxOf(q.toSet().size, 1)
-                if (ratio >= 0.6 && overlap >= 2) (ratio * 50).toInt() else 0
+                maxOf(if (ratio >= 0.6 && overlap >= 2) (ratio * 50).toInt() else 0, Phonetic.score(query, label))
             }
         }
     }

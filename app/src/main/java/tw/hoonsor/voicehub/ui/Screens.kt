@@ -495,6 +495,8 @@ fun SettingsScreen() {
             PolicyNotice(groqBase)
             Spacer(Modifier.height(10.dp))
             Field("語音轉文字模型", sttModel, { sttModel = it })
+            var sttFixes by remember { mutableStateOf(s.sttFixes) }
+            Field("聽錯對照表（每行一個「聽成=正確」）", sttFixes, { sttFixes = it; s.sttFixes = it }, minLines = 2, placeholder = "泰斯蓋爾=Tailscale\n搜得否=SoundFlow")
             Spacer(Modifier.height(10.dp))
             Field("備援 AI 模型", fallbackModel, { fallbackModel = it })
             Spacer(Modifier.height(10.dp))
@@ -729,9 +731,13 @@ private fun VoicePicker(rate: Float) {
         options = null
         options = Graph.speaker.voicesOf(engine)
     }
+    var cloud by remember { mutableStateOf(s.cloudVoice) }
+    val hasMinimax = s.minimaxKey != null
     fun choose(newEngine: String?, newVoice: String?) {
         engine = newEngine
         voice = newVoice
+        cloud = false
+        s.cloudVoice = false
         s.ttsEngine = newEngine
         s.ttsVoice = newVoice
         Graph.speaker.reload()
@@ -752,12 +758,28 @@ private fun VoicePicker(rate: Float) {
         }
         Spacer(Modifier.height(8.dp))
     }
-    VoiceRow("預設聲音", "使用這個引擎的台灣中文預設聲音", voice == null, playing == "default", onPick = { choose(engine, null) }, onPreview = { preview(null) })
+    VoiceRow(
+        "MiniMax 雲端聲音",
+        if (hasMinimax) "跟影片專案同一個聲音，比較自然；沒網路時自動改用下面選的內建聲音" else "要先在「AI 主力」填 MiniMax 的 API key 才能用",
+        cloud && hasMinimax, playing == "cloud",
+        onPick = { if (hasMinimax) { cloud = true; s.cloudVoice = true } },
+        onPreview = {
+            playing = "cloud"
+            scope.launch {
+                if (!Graph.speaker.speakCloud("你好，我是語音總控。明天下午三點要交人事月報。", rate)) {
+                    android.widget.Toast.makeText(ctx, "MiniMax 聲音播不出來，請檢查網路或 API key", android.widget.Toast.LENGTH_SHORT).show()
+                }
+                playing = null
+            }
+        },
+    )
+    Text("內建聲音（不用網路）", color = C.muted, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 4.dp, bottom = 6.dp))
+    VoiceRow("預設聲音", "使用這個引擎的台灣中文預設聲音", !cloud && voice == null, playing == "default", onPick = { choose(engine, null) }, onPreview = { preview(null) })
     when (val list = options) {
         null -> Text("讀取聲音清單中…", color = C.muted, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = 8.dp))
         else -> {
             list.forEach { o ->
-                VoiceRow(o.label, o.detail, voice == o.info.name, playing == o.info.name, onPick = { choose(engine, o.info.name) }, onPreview = { preview(o.info.name) })
+                VoiceRow(o.label, o.detail, !cloud && voice == o.info.name, playing == o.info.name, onPick = { choose(engine, o.info.name) }, onPreview = { preview(o.info.name) })
             }
             if (list.isEmpty()) {
                 Text("這個引擎沒有中文聲音，或還沒下載語音資料。", color = C.warn, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(vertical = 8.dp))

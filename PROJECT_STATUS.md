@@ -1,6 +1,6 @@
 # PROJECT_STATUS — 語音總控（APK-VoiceHub）
 
-- 目前版本：v0.7.0（main 推送後由 CI 發佈 latest；使用說明書已在模擬器驗證）
+- 目前版本：v0.8.0（main 推送後由 CI 發佈 latest；使用說明書已在模擬器驗證）
 - 程式碼：`D:\dev\APK-VoiceHub`；專案資料夾 `D:\01-Project\42-語音總控制APP`（CODE_LOCATION.txt 指過來）
 - 套件：`tw.hoonsor.voicehub`（LAB：`tw.hoonsor.voicehub.lab`）
 
@@ -29,6 +29,7 @@
 ## 版本歷程
 | 版本 | 日期 | commit | 變更 | 為什麼 |
 |---|---|---|---|---|
+| v0.8.0 | 2026-11-09 | （本次） | 常用簡單指令（開 APP、音量、手電筒、播放、計時、今天的鬧鐘、電量）本機直接處理不問 AI（FastPath）；回覆改用 MiniMax 串流語音（speech-2.8-turbo＋News_Anchor，與 69 號同聲音，失敗退回內建）；開 APP 依發音比對英文名稱（Phonetic，ICU Han-Latin）；聽錯對照表 | 倬實測：開 APP 很慢、聲音生硬、Tailscale 仍聽錯 |
 | v0.7.0 | 2026-11-07 | （本次） | 「我的派工單有哪些」唸全部未完成的單（dispatch_status 不給 id）；「音樂播放器」「播放器」優先開 SoundFlow；調音量後讀回確認，系統沒套用就說沒變；Whisper 提示加入英文 APP 名稱；無障礙服務被關掉時發通知提醒 | 倬實測回報：音量回報成功卻沒變、藍牙耳機手勢失效、開到系統音樂、Tailscale 聽錯、只能查單張派工單 |
 | v0.6.0 | 2026-11-02 | （本次） | 系統分享選單新增「做成海報樣板」：圖片複製到手機佇列、傳到 65 號閘道 `/api/references`，連不上就留著，開對話畫面或健康檢查補送；「確認不含個資、公務內容」預設關閉；HEIC 轉 JPEG；設定頁可改閘道網址（ReferenceOutbox＋5 個測試） | 倬要把看到的圖分享給海報工坊做成樣板 |
 | v0.5.1 | 2026-10-28 | （本次） | 「去＋地點」（去涮金鍋、導航到台北車站、帶我去最近的全聯）不經 AI、直接用預設交通方式（機車）導航（Places.goTo＋2 個測試）；去買／去繳／去接、提醒、時間字眼、問句照常交給 AI；Planner 規則 13：去地點＝導航，不是待辦 | 倬說「去涮金鍋」思考很久後被當成待辦事項（待辦 APP 上線後 AI 誤判） |
@@ -83,6 +84,14 @@
 5. 主動代理化：等倬決定 PRD 方向稿的 D1～D8（`D:\01-Project\42-語音總控制APP\docs\PRD-Duet化方向-v0.1.md`），先做 M0
 
 ## 交接紀錄
+### 2026-11-09／電腦 A（v0.8.0 加快與換聲音）
+- 倬實測 v0.7.0：媒體音量 OK、音樂播放器 OK 但慢、派工單列表 OK、Tailscale 仍聽錯、藍牙加減加尚未測
+- 完成：見版本歷程 v0.8.0；單元測試 103 個全過（新增 FastPathTest、PhoneticTest、SttFixesTest、CloudVoiceStreamTest）
+- 決定＋原因：快速路徑只收句型完全符合、單一動作的指令，有日期的鬧鐘仍走 AI（系統鬧鐘只有時分，「明天七點」可能設成今天）；開 APP 要比對分數 ≥80 且唯一才不問 AI，避免「打開 YouTube 播周杰倫」被截斷。雲端聲音用串流 PCM 24kHz＋AudioTrack，exclude_aggregated_audio=true、status=2 不放音（避免整段重播）；用 AI 主力的 MiniMax key，不新增金鑰
+- 實測：電腦 A 呼叫 MiniMax 串流，第一段聲音約 1.3 秒、回傳格式為 `data: {...}` 與 status 1／2，和解析程式一致
+- 放棄：每段計時（倬決定先不做）；改用 Gemini Live／OpenAI Realtime 整套重寫（成本與改動太大，先回報選項給倬）
+- 未確認：手機實機上的雲端聲音、ICU 拼音在 ColorOS 的實際結果（JVM 測試用假拼音表）、藍牙耳機手勢
+
 ### 2026-11-07／電腦 A（倬實測回報修正，v0.7.0）
 - 完成：見版本歷程 v0.7.0；單元測試通過（含新增的 listQuery、summarize、音樂播放器別名）
 - 決定＋原因：查全部派工單沿用 dispatch_status（id 改選填），不新增動作，說明書與 manifest 只改一節；派工網站 `GET /api/tickets?status=…` 已存在（唯讀確認回 38 張未完成）

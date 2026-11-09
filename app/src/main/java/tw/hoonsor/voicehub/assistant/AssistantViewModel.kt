@@ -1,5 +1,6 @@
 package tw.hoonsor.voicehub.assistant
 
+import tw.hoonsor.voicehub.agent.SttFixes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
@@ -118,7 +119,7 @@ class AssistantViewModel : ViewModel() {
                 _state.update { it.copy(mode = Mode.IDLE, level = 0f, partial = "") }
                 return@launch
             }
-            process(text)
+            process(SttFixes.apply(text, SttFixes.parse(settings.sttFixes)))
         }
     }
 

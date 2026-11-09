@@ -77,6 +77,20 @@ class Settings(context: Context) {
     var ttsVoice: String?
         get() = p.getString("ttsVoice", null)
         set(v) = p.edit().putString("ttsVoice", v).apply()
+    /** 用 MiniMax 雲端聲音唸回覆（跟 69 號影片專案同一個聲音）；沒網路或失敗時退回內建朗讀 */
+    var cloudVoice: Boolean
+        get() = p.getBoolean("cloudVoice", true)
+        set(v) = p.edit().putBoolean("cloudVoice", v).apply()
+    var cloudVoiceId: String
+        get() = p.getString("cloudVoiceId", null)?.ifBlank { null } ?: tw.hoonsor.voicehub.voice.CloudVoice.DEFAULT_VOICE
+        set(v) = p.edit().putString("cloudVoiceId", v.trim()).apply()
+    var cloudVoiceModel: String
+        get() = p.getString("cloudVoiceModel", null)?.ifBlank { null } ?: tw.hoonsor.voicehub.voice.CloudVoice.DEFAULT_MODEL
+        set(v) = p.edit().putString("cloudVoiceModel", v.trim()).apply()
+    /** 聽錯對照表，每行「聽成=正確」（例如 泰斯蓋爾=Tailscale）；轉文字後先替換再處理 */
+    var sttFixes: String
+        get() = p.getString("sttFixes", "") ?: ""
+        set(v) = p.edit().putString("sttFixes", v.trim()).apply()
     /** 音量鍵手勢叫出（常駐待命服務） */
     var volumeGesture: Boolean
         get() = p.getBoolean("volumeGesture", false)
@@ -114,6 +128,8 @@ class Settings(context: Context) {
 
     val hasLlm get() = !llmKey.isNullOrBlank()
     val hasGroq get() = !groqKey.isNullOrBlank()
+    /** 雲端聲音要用 MiniMax 的金鑰：AI 主力設成 MiniMax 才有 */
+    val minimaxKey: String? get() = llmKey?.takeIf { it.isNotBlank() && llmBaseUrl.contains("minimax", ignoreCase = true) }
 
     companion object {
         const val DEFAULT_LLM_BASE = "https://api.minimax.io/v1"

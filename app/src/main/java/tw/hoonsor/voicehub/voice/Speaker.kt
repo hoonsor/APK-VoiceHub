@@ -54,7 +54,27 @@ class Speaker(context: Context) {
     /** 目前實際使用的聲音名稱（顯示在設定頁） */
     fun currentVoiceName(): String? = if (ready) runCatching { tts?.voice?.name }.getOrNull() else null
 
-    fun stop() { if (ready) tts?.stop() }
+    fun stop() {
+        CloudVoice.stop()
+        if (ready) tts?.stop()
+    }
+
+    /** 雲端聲音能不能用（開關開著、有 MiniMax 金鑰） */
+    fun cloudAvailable(): Boolean = Graph.settings.cloudVoice && Graph.settings.minimaxKey != null
+
+    /** 用 MiniMax 唸；成功回 true，失敗（沒網路、額度用完）回 false 讓呼叫端改用內建 */
+    suspend fun speakCloud(text: String, rate: Float, voiceId: String = Graph.settings.cloudVoiceId): Boolean {
+        val s = Graph.settings
+        val key = s.minimaxKey ?: return false
+        return try {
+            CloudVoice.speak(s.llmBaseUrl, key, s.cloudVoiceModel, voiceId, text, rate)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            android.util.Log.w("Speaker", "雲端語音失敗，改用內建：${e.message}")
+            false
+        }
+    }
 
     /** 引擎剛建立（APP 剛打開、剛換聲音）時要等初始化完成，最多等 [ms] 毫秒 */
     suspend fun awaitReady(ms: Long = 3_000): Boolean {
@@ -68,7 +88,9 @@ class Speaker(context: Context) {
 
     /** 唸完才回來；引擎 3 秒內沒準備好就跳過（不讓對話卡住） */
     suspend fun speak(text: String, rate: Float) {
-        if (text.isBlank() || !awaitReady()) return
+        if (text.isBlank()) return
+        if (cloudAvailable() && speakCloud(text, rate)) return
+        if (!awaitReady()) return
         val t = tts ?: return
         speakWith(t, text, rate)
     }

@@ -51,6 +51,11 @@ class App : Application() {
     override fun onCreate() {
         super.onCreate()
         Graph.init(this)
+        // 英文 APP 名稱依發音比對：中文轉拼音用系統內建的 ICU
+        runCatching {
+            val tr = android.icu.text.Transliterator.getInstance("Han-Latin; Latin-ASCII")
+            tw.hoonsor.voicehub.agent.Phonetic.romanize = { s -> tr.transliterate(s) }
+        }
         // 長按桌面圖示的「設定」捷徑（不用靜態 shortcuts.xml，因為 LAB 版套件名不同）
         runCatching {
             getSystemService(ShortcutManager::class.java).dynamicShortcuts = listOf(

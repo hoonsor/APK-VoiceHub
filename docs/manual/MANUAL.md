@@ -1642,6 +1642,16 @@ Podcast 改名只改 SoundFlow 裡的名稱，新知網站上不變；隨時可�
 - 打開 Tailscale。
 - 暫存的派工會自動補送，也可以到健康檢查頁按「立即補送」。
 
+## 自動備份到 Dropbox
+
+語音總控每天會把設定（常用地點、語音修正詞、提醒設定等）存一份到手機的 `Documents/HoonsorBackup/VoiceHub/`，再由 Dropsync 同步到 Dropbox。
+
+- 位置：設定 › 自動備份。可以關掉、看上次備份時間、按「立即備份」。
+- 內容沒變就不另存；只留最近 7 份。
+- API key 不備份，換手機要重新輸入。
+- 還原：從 Dropbox 下載備份檔到手機，設定 › 自動備份 › 從備份檔還原，選那個 `.json` 檔。目前的設定會被取代。
+- Dropsync 只要設定一次：安裝 Dropsync（Autosync for Dropbox），新增同步資料夾，手機端選 `Documents/HoonsorBackup`、Dropbox 端選一個資料夾，同步方式選「只上傳」或「雙向」，並把 Dropsync 設成電池不限制。其他自製 APP 的備份也放在同一個資料夾，一次設定全部都同步。
+
 ## 怎麼更新語音總控
 
 - 到 GitHub `hoonsor/APK-VoiceHub` 的 Releases 下載最新的 APK，或用 Obtainium 追蹤更新。
@@ -1660,7 +1670,8 @@ Podcast 改名只改 SoundFlow 裡的名稱，新知網站上不變；隨時可�
 
 ## 金鑰與權限
 
-- API key 用手機的 Keystore 加密保存，不會備份、不會唸出來，換手機要重新輸入。
+- API key 用手機的 Keystore 加密保存，不會備份（系統備份與每日自動備份都不含）、不會唸出來，換手機要重新輸入。
+- 每日自動備份只寫在手機的 Documents 資料夾，由你自己的 Dropsync 同步到 Dropbox，語音總控不會連 Dropbox。
 - 會刪資料、覆蓋資料、對外送出的動作，一律先問你確定嗎。
 - 只有同一把簽章的倬的 APP 才能互相呼叫，其他 APP 無法透過語音總控操作你的資料。
 

@@ -56,6 +56,13 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.VoiceHub">
 
+        <!-- 每日自動備份（hoonsor-kit android-auto-backup）：寫到 Documents/HoonsorBackup/VoiceHub/，Dropsync 同步到 Dropbox -->
+        <meta-data android:name="tw.hoonsor.backup.SOURCE" android:value="tw.hoonsor.voicehub.data.VoiceHubBackupSource" />
+        <service
+            android:name="tw.hoonsor.backup.BackupJobService"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+
         <!-- 對話畫面：桌面圖示、長按電源鍵（ACTION_ASSIST）、快速設定磚都進這裡 -->
         <activity
             android:name=".assistant.AssistantActivity"

@@ -562,6 +562,9 @@ fun SettingsScreen() {
         SectionTitle("明天行程提醒")
         DailyBriefCard()
 
+        SectionTitle("自動備份")
+        AutoBackupCard()
+
         Row(verticalAlignment = Alignment.CenterVertically) {
             OutlineButton("儲存", icon = Glyph.Check, primary = true) { save() }
             Spacer(Modifier.size(10.dp))

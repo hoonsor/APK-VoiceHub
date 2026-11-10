@@ -18,13 +18,7 @@ object CalendarTrigger {
         if (t.length > 20 || !ask.containsMatchIn(t) || write.containsMatchIn(t)) return null
         weekday.find(t)?.let { m ->
             val target = "一二三四五六日天".indexOf(m.groupValues[2]).let { if (it == 7) 7 else it + 1 }
-            val cur = today.dayOfWeek.value
-            // 「下週三」＝下一週（從週一算起）的星期三；沒說「下」就是最近的那一天（今天也算）
-            return when (m.groupValues[1]) {
-                "下" -> 7 - cur + target
-                "下下" -> 14 - cur + target
-                else -> (target - cur + 7) % 7
-            }
+            return CalendarCommand.weekdayOffset(m.groupValues[1], target, today.dayOfWeek.value)
         }
         return when {
             t.contains("大後天") -> 3

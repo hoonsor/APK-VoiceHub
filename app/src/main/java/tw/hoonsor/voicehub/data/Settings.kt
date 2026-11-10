@@ -141,6 +141,11 @@ class Settings(context: Context) {
         get() = p.getStringSet("briefExcluded", emptySet()).orEmpty().mapNotNull { it.toLongOrNull() }.toSet()
         set(v) = p.edit().putStringSet("briefExcluded", v.map { it.toString() }.toSet()).apply()
 
+    /** 用說的新增行程時寫到哪個行事曆；-1＝自動（第一個帳號的主要行事曆） */
+    var calWriteId: Long
+        get() = p.getLong("calWriteId", -1L)
+        set(v) = p.edit().putLong("calWriteId", v).apply()
+
     // ---- 語音派工（利姆路 raphael-dispatch，經 Tailscale，不需金鑰） ----
     var dispatchBaseUrl: String
         get() = p.getString("dispatchBaseUrl", DEFAULT_DISPATCH_BASE) ?: DEFAULT_DISPATCH_BASE

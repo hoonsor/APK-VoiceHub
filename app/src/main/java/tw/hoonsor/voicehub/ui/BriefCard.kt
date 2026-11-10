@@ -34,6 +34,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import tw.hoonsor.voicehub.Graph
 import tw.hoonsor.voicehub.calendar.CalendarReader
+import tw.hoonsor.voicehub.calendar.CalendarWriter
 import tw.hoonsor.voicehub.calendar.DailyBrief
 import tw.hoonsor.voicehub.ui.theme.C
 import java.time.format.DateTimeFormatter
@@ -45,13 +46,18 @@ fun DailyBriefCard() {
     val s = Graph.settings
     var tick by remember { mutableIntStateOf(0) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { tick++ }
-    val askCalendar = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { tick++ }
+    val askCalendarLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { tick++ }
+    // 讀取與修改一起要：查行程、每天提醒要讀；用說的新增、改時間、刪除要寫
+    val askCalendar = { askCalendarLauncher.launch(arrayOf(Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR)) }
     val askNotify = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { tick++ }
     val granted = remember(tick) { CalendarReader.hasPermission(ctx) }
     val notify = remember(tick) { Build.VERSION.SDK_INT < 33 || ctx.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED }
     val exact = remember(tick) { DailyBrief.canExact(ctx) }
     val battery = remember(tick) { ctx.getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(ctx.packageName) }
+    val canWrite = remember(tick) { CalendarWriter.canWrite(ctx) }
     val calendars = remember(tick, granted) { runCatching { CalendarReader.calendars(ctx) }.getOrDefault(emptyList()) }
+    val writable = remember(tick, granted, canWrite) { runCatching { CalendarWriter.writable(ctx) }.getOrDefault(emptyList()) }
+    var writeId by remember { mutableStateOf(s.calWriteId) }
 
     var on by remember { mutableStateOf(s.briefEnabled) }
     var minute by remember { mutableIntStateOf(s.briefMinute) }
@@ -67,7 +73,7 @@ fun DailyBriefCard() {
         ToggleRow("每天唸明天的行程", "到了設定的時間，用手機內建聲音唸出明天的行事曆，並留一則通知", on) {
             on = it
             s.briefEnabled = it
-            if (it && !granted) askCalendar.launch(Manifest.permission.READ_CALENDAR)
+            if (it && !granted) askCalendar()
             else if (it && !notify && Build.VERSION.SDK_INT >= 33) askNotify.launch(Manifest.permission.POST_NOTIFICATIONS)
             resync()
         }
@@ -98,7 +104,7 @@ fun DailyBriefCard() {
             }
         }
         Row(Modifier.padding(top = 8.dp).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (!granted) OutlineButton("允許讀取行事曆", primary = true) { askCalendar.launch(Manifest.permission.READ_CALENDAR) }
+            if (!granted || !canWrite) OutlineButton("允許行事曆權限", primary = true) { askCalendar() }
             if (granted) OutlineButton("現在唸一次", primary = true) { DailyBrief.runNow(ctx) }
             if (on && !battery) OutlineButton("電池不限制") {
                 runCatching {
@@ -124,6 +130,24 @@ fun DailyBriefCard() {
                     s.briefExcluded = excluded
                 }
             }
+        }
+        if (granted) {
+            Text("用說的新增行程時寫到", color = C.text, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 12.dp))
+            if (!canWrite) {
+                Text("還沒允許修改行事曆：按上面的「允許行事曆權限」。", color = C.dim, style = MaterialTheme.typography.bodyMedium)
+            } else if (writable.isEmpty()) {
+                Text("沒有可以寫入的行事曆（別人共享給你的，要有「變更活動」權限才能寫）。", color = C.dim, style = MaterialTheme.typography.bodyMedium)
+            }
+            val current = writable.firstOrNull { it.id == writeId } ?: writable.firstOrNull { it.primary } ?: writable.firstOrNull()
+            writable.forEach { c ->
+                ToggleRow(c.name.ifBlank { "（沒有名稱）" }, c.account, c.id == current?.id) { want ->
+                    if (want) { writeId = c.id; s.calWriteId = c.id }
+                }
+            }
+            Text(
+                "說「行事曆新增明天下午兩點考績會」「把明天的考績會改到三點」「取消後天的朝會」，會先唸給你確認，說「確定」才寫入。句子在手機上解析，不送 AI。說「加到學校行事曆」可以指定行事曆。",
+                color = C.dim, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp),
+            )
         }
         Text(
             "共享給這支手機上帳號的行事曆，要在 Google 日曆 APP › 設定 › 該行事曆 › 打開「同步」才讀得到。行程只在手機上整理，不會送給 AI。說「明天有什麼行程」「下週三有什麼活動」也可以隨時查。",

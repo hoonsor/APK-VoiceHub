@@ -1,7 +1,7 @@
 # PROJECT_STATUS — 語音總控（APK-VoiceHub）
 
-- 目前版本：v0.9.0（main 推送後由 CI 發佈 latest；使用說明書已在模擬器驗證）
-- 程式碼：`D:\dev\APK-VoiceHub`；專案資料夾 `D:\01-Project\42-語音總控制APP`（CODE_LOCATION.txt 指過來）
+- 目前版本：v0.10.0（main 推送後由 CI 發佈 latest；使用說明書已在模擬器驗證）
+- 程式碼：`D:dev\APK-VoiceHub`；專案資料夾 `D:\01-Project\42-語音總控制APP`（CODE_LOCATION.txt 指過來）
 - 套件：`tw.hoonsor.voicehub`（LAB：`tw.hoonsor.voicehub.lab`）
 
 ## 任務
@@ -29,7 +29,8 @@
 ## 版本歷程
 | 版本 | 日期 | commit | 變更 | 為什麼 |
 |---|---|---|---|---|
-| v0.9.0 | 2026-11-09 | （本次） | 明天行程提醒：每天定時（預設 21:00）讀手機同步的行事曆（含共享行事曆），在手機上整理成口語、留通知、用內建聲音唸（DailyBrief：精準鬧鐘＋mediaPlayback 前台服務，開機／改時間重排）；新增 calendar_agenda「明天／下週三有什麼行程」本機直達不經 AI；查行程的回覆不記進給 AI 的對話紀錄、不用雲端聲音（Reply.private）；設定頁新增卡片（時間、週末、沒行程也唸、雲端聲音、勾選行事曆、權限狀態、現在唸一次） | 倬要用另一個 Google 帳號共享行事曆，每天定時用語音提醒明天的事 |
+| v0.10.0 | 2026-11-10 | （本次） | 用說的新增、改時間、刪除行程：CalendarCommand 在手機上用規則解析句子（日期、上下午、時間範圍、地點、指定行事曆），CalendarVoice 找活動、組確認句，倬說「確定」後 CalendarWriter 直接寫 CalendarContract（Google 同步推上雲端，不用 Google API）；重複活動、別人邀請的、唯讀行事曆不改；等確認時說了別的長句當新指令；設定頁權限改成讀寫一起要，新增「用說的新增行程時寫到」選行事曆 | 倬要用語音新增 Google 日曆事件，並一起做改時間、刪除 |
+| v0.9.0 | 2026-11-09 | ed2f248 | 明天行程提醒：每天定時（預設 21:00）讀手機同步的行事曆（含共享行事曆），在手機上整理成口語、留通知、用內建聲音唸（DailyBrief：精準鬧鐘＋mediaPlayback 前台服務，開機／改時間重排）；新增 calendar_agenda「明天／下週三有什麼行程」本機直達不經 AI；查行程的回覆不記進給 AI 的對話紀錄、不用雲端聲音（Reply.private）；設定頁新增卡片（時間、週末、沒行程也唸、雲端聲音、勾選行事曆、權限狀態、現在唸一次） | 倬要用另一個 Google 帳號共享行事曆，每天定時用語音提醒明天的事 |
 | v0.8.1 | 2026-11-09 | （本次） | 查電量放寬句型（電池還剩多少、還有電嗎、電量多少呢都走快速路徑） | 倬實測：查電量很慢，音樂播放器已變快 |
 | v0.8.0 | 2026-11-09 | （本次） | 常用簡單指令（開 APP、音量、手電筒、播放、計時、今天的鬧鐘、電量）本機直接處理不問 AI（FastPath）；回覆改用 MiniMax 串流語音（speech-2.8-turbo＋News_Anchor，與 69 號同聲音，失敗退回內建）；開 APP 依發音比對英文名稱（Phonetic，ICU Han-Latin）；聽錯對照表 | 倬實測：開 APP 很慢、聲音生硬、Tailscale 仍聽錯 |
 | v0.7.0 | 2026-11-07 | （本次） | 「我的派工單有哪些」唸全部未完成的單（dispatch_status 不給 id）；「音樂播放器」「播放器」優先開 SoundFlow；調音量後讀回確認，系統沒套用就說沒變；Whisper 提示加入英文 APP 名稱；無障礙服務被關掉時發通知提醒 | 倬實測回報：音量回報成功卻沒變、藍牙耳機手勢失效、開到系統音樂、Tailscale 聽錯、只能查單張派工單 |
@@ -74,6 +75,9 @@
 22. [ ] 新 Google 帳號加進手機、共享行事曆在 Google 日曆打開同步 → 設定 › 明天行程提醒 列得出那些行事曆；按「現在唸一次」唸對明天的行程
 23. [ ] 打開提醒、時間設成 2 分鐘後、回桌面鎖螢幕 → 準時唸出並留通知（ColorOS 要電池不限制）
 24. [ ] 說「明天有什麼行程」「下週三有什麼活動」→ 馬上唸，不出現「思考中」
+25. [ ] 設定 › 明天行程提醒 按「允許行事曆權限」，在「用說的新增行程時寫到」選好行事曆；說「行事曆新增明天下午兩點考績會」→ 唸出確認句、說「確定」→ Google 日曆（手機與網頁）都看得到
+26. [ ] 說「把明天的考績會改到三點」→ 確定 → 時間改了、長度不變；說「取消明天的考績會」→ 確定 → 刪掉，網頁版垃圾桶看得到
+27. [ ] 說「幫我在學校行事曆加一個下週五下午三點家長會」（換成你實際的行事曆名稱）→ 確認句唸出那個行事曆
 
 ## 已知問題
 - 模擬器（API 37）已驗證：對話畫面、測試台、app_list、alarm_set（交給倬的鬧鐘 APP 成功新增 00:00）、離線模式開 YouTube、查單與派工連不上分支。模擬器不在 Tailscale 內，派工成功分支未在裝置上驗證（電腦端 `/api/health` 正常）
@@ -89,6 +93,12 @@
 5. 主動代理化：等倬決定 PRD 方向稿的 D1～D8（`D:\01-Project\42-語音總控制APP\docs\PRD-Duet化方向-v0.1.md`），先做 M0
 
 ## 交接紀錄
+### 2026-11-10／電腦 A（v0.10.0 用說的新增、改時間、刪除行程）
+- 完成：見版本歷程 v0.10.0；CalendarCommandTest 23 例（新增各句型、整天、指定行事曆、沒說日期、地點、分鐘判斷、改時間、刪除、不該攔的句子、比對）；全部 135 個單元測試通過。API 37 模擬器（LAB）驗證：新增「明天下午三點到五點研習，在圖書館」寫入正確（11/11 15:00–17:00、地點）、「把今天的考績會改到四點」保留 1.5 小時、「取消今天的朝會」刪除、找不到與缺日期的回覆、查行程讀得到新活動、設定頁新區塊
+- 決定＋原因：寫 CalendarContract 而不是 Google Calendar API（不用 OAuth、Cloud 專案與 token 維護）；句子只用手機規則解析，不送 AI（標題可能有人名或公務內容）；新增要有「行事曆／行程／活動」字眼才攔（避免搶走鬧鐘、待辦）；改時間、刪除只在找得到活動時才攔，句子有日期或行事曆字眼才回「找不到」；確認流程獨立於 ToolRegistry（calPending），不放進 AI 動作目錄
+- 放棄：打開行事曆新增畫面讓倬按儲存（不是全語音）；改重複活動的單一場次（要處理例外事件，風險高，請倬用 Google 日曆 APP）
+- 開發在 worktree `D:\dev\APK-VoiceHub-cal`（分支 feat/calendar-write），因為同時有「倬的天氣」session 在改 main；說明書已寫有「一起唸明天天氣」開關，但語音總控程式尚未實作，等那邊處理
+- 未確認：ColorOS 實機寫入後同步到 Google 的速度；Google 帳號主要行事曆的名稱是 email，確認句會唸 email（可在設定選別的行事曆）
 ### 2026-11-09／電腦 A（v0.8.1 電量、v0.9.0 明天行程提醒）
 - 倬實測 v0.8.0：音樂播放器變快；查電量仍慢 → v0.8.1 放寬電量句型（原因：只認固定說法）
 - 完成：見版本歷程 v0.9.0；新增 CalendarBriefTest（整理、去重、只留當天、整天活動 UTC、星期換算、排程時間）；API 37 模擬器驗證：建本機行事曆＋3 個行程，「現在唸一次」通知標題「明天 11 月 10 日星期二：3 個行程」、系統排程登記 RTC_WAKEUP（exactAllowReason=policy_permission）
@@ -119,7 +129,7 @@
 - 完成：MANUAL.md 新增「賈維斯資料包」一章 11 節（本分支 59e624b、main 934b374）。main 的 CI run 41463330344 的 manual 與 build 都綠；`--github` 檢查 124 節通過；Python 16、Android 91 個測試通過
 - 決定＋原因：沿用 `docs/manual-datapack` 的章節再依 manifest 與 DataPack 程式補齊，不重寫；同時 cherry-pick 到 main，因為每日排程跑在 main，只合說明書，不把 v0.5～v0.6 的程式帶進 main（回滾點 tag `pre-merge-v0.6.0`）
 - 未完成：v0.6.0 tag 那次 CI 會維持紅色（tag 內容不變，重跑也一樣），下一個 tag 才會綠；APK 內的說明書要下一版才有這章。`docs/manual-datapack` 已被取代，可以刪；APK-DataPack 的 PROJECT_STATUS 還寫著未合併
-- 環境注意：本機 Python 跑 `--github` 會憑證失敗，要設 `SSL_CERT_FILE` 指向 Git 的 ca-bundle；`--local D:\dev` 會把 APK-VoiceHub-vocab worktree 當成別的 APP 而誤報
+- 環境注意：本機 Python 跑 `--github` 會憑證失敗，要設 `SSL_CERT_FILE` 指向 Git 的 ca-bundle；`--local D:dev` 會把 APK-VoiceHub-vocab worktree 當成別的 APP 而誤報
 
 ### 2026-11-02／電腦 A
 - 完成：v0.6.0 分享圖片到海報工坊。模擬器驗證：分享畫面、離線時圖片留在佇列；multipart 格式用測試閘道驗證解得開
@@ -177,7 +187,7 @@
 - 已知：`lintLabDebug` 有一個舊錯誤（VoiceServices.kt 的 `startActivityAndCollapse(Intent)` 已棄用），不影響 assembleRelease，之後再修
 
 ### 2026-10-18／電腦 A
-- 完成：setup-hoonsor-signing.ps1 加入 APK-VoiceHub，並改存為含 BOM 的 UTF-8（原本無 BOM，在 Windows PowerShell 5.1 下中文會亂碼）；各中文 APP 資料夾補上 CODE_LOCATION.txt 與指向 D:\dev 的 CLAUDE.md
+- 完成：setup-hoonsor-signing.ps1 加入 APK-VoiceHub，並改存為含 BOM 的 UTF-8（原本無 BOM，在 Windows PowerShell 5.1 下中文會亂碼）；各中文 APP 資料夾補上 CODE_LOCATION.txt 與指向 D:dev 的 CLAUDE.md
 - 決定＋原因：倬選定免接線更新方案 B＋D（GitHub Releases＋Obtainium、App 內自我更新），鬧鐘 APP 已先實作（hoonsor/APK-Alarm v0.11.0）
 - 未完成：共用金鑰尚未產生，各 repo 都還沒有 SIGNING_* Secrets，目前 CI 沒有 Secrets 時改用 debug 簽章，而 debug 簽章每次執行都不同，無法覆蓋安裝
 

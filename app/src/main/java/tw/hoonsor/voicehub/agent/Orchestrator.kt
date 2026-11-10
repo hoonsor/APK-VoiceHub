@@ -14,6 +14,9 @@ import tw.hoonsor.voicehub.ai.Planner
 import tw.hoonsor.voicehub.data.Settings
 import tw.hoonsor.voicehub.dispatch.DispatchTrigger
 import tw.hoonsor.voicehub.calendar.CalendarTrigger
+import tw.hoonsor.voicehub.calendar.CalendarVoice
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -51,19 +54,40 @@ class Orchestrator(
     private data class Pending(val call: PlannedCall, val token: String, val utterance: String)
 
     private var pending: Pending? = null
+    /** 用說的新增／修改／刪除行程，等倬說「確定」 */
+    private var calPending: CalendarVoice.Op? = null
+    private val calendarVoice = CalendarVoice(context, settings)
     /** 只說了「派工」或「專案規劃」沒講內容，下一句話就是內容；記住是哪一種 */
     private var awaitingDispatch: DispatchTrigger.Request? = null
     private val history = ArrayDeque<ChatMessage>()
 
-    val hasPending get() = pending != null
+    val hasPending get() = pending != null || calPending != null
 
     fun reset() {
         pending = null
+        calPending = null
         awaitingDispatch = null
         history.clear()
     }
 
     suspend fun handle(utterance: String, onEvent: (Event) -> Unit): Reply {
+        calPending?.let { op ->
+            calPending = null
+            when {
+                // 「取消後天的朝會」是新指令，不是回答；只有短句才算否定
+                OfflineParser.isNegative(utterance) && OfflineParser.normalize(utterance).length <= 6 ->
+                    return remember(utterance, Reply("好，行事曆沒有變動。", private = true))
+                OfflineParser.isAffirmative(utterance) -> {
+                    onEvent(Event.PhaseChanged(Phase.EXECUTING))
+                    val r = withContext(Dispatchers.IO) { calendarVoice.run(op) }
+                    val result = r.fold({ AgentResult.ok(it) }, { AgentResult.fail(AgentApi.INTERNAL, it.message ?: it.javaClass.simpleName) })
+                    onEvent(Event.ActionDone(op.label, result))
+                    val text = r.getOrElse { "沒辦法寫入行事曆：${it.message}" }
+                    return remember(utterance, Reply(text, private = true))
+                }
+                else -> Unit // 講了別的事：放棄確認，當新指令處理
+            }
+        }
         pending?.let { p ->
             when {
                 OfflineParser.isNegative(utterance) -> {
@@ -100,6 +124,16 @@ class Orchestrator(
                 return remember(utterance, Reply(ask, expectsAnswer = true))
             }
             return runDirect(utterance, "dispatch_send", JSONObject().put("text", req.payload), onEvent)
+        }
+
+        // 「行事曆新增明天下午兩點考績會」「把明天的考績會改到三點」「取消後天的朝會」：手機上解析，先確認再寫入
+        when (val p = withContext(Dispatchers.IO) { calendarVoice.plan(utterance) }) {
+            is CalendarVoice.Ask -> {
+                calPending = p.op
+                return remember(utterance, Reply(p.text, expectsAnswer = true, confirming = true, private = true))
+            }
+            is CalendarVoice.Say -> return remember(utterance, Reply(p.text, expectsAnswer = p.retry, private = true))
+            null -> Unit
         }
 
         // 「明天有什麼行程」：行事曆內容只在手機上整理，不經 AI

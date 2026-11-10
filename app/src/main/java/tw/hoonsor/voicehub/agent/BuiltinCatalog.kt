@@ -127,9 +127,9 @@ object BuiltinCatalog {
             listOf("還剩多少電", "有在充電嗎"),
         ),
         ActionSpec(
-            "dispatch_send", "語音派工", "把開發需求或點子送到利姆路的派工收件匣，由背景的 Claude 整理與派工。text 必須是使用者的原話（只去掉「派工」「我有個點子」這類觸發詞），不可摘要、改寫或拆單。回覆時直接唸 summary。", Risk.REVERSIBLE,
+            "dispatch_send", "語音派工", "把開發需求或點子送到利姆路的派工收件匣，由背景的 Claude 整理與派工。只有使用者的話裡有「派工」才可以用；說「待辦事項」的是待辦，不是派工。text 必須是使用者的原話（只去掉「派工」「我有個點子」這類觸發詞），不可摘要、改寫或拆單。回覆時直接唸 summary。", Risk.REVERSIBLE,
             obj("text" to str("使用者原話（去掉觸發詞），1-5000 字"), required = listOf("text")),
-            listOf("派工，幫鬧鐘 APP 加一個貪睡次數上限", "我有個點子，做一個記帳工具可以拍收據", "叫利姆路把 27 號專案跑一下收工"),
+            listOf("派工，幫鬧鐘 APP 加一個貪睡次數上限", "開一張派工單，27 號專案跑一下收工"),
         ),
         ActionSpec(
             "dispatch_status", "查派工單", "查詢派工網站上派工單的狀態。給 id 查某一張；不給 id 唸全部未完成的單（各狀態張數與等使用者處理的單）。", Risk.READ,

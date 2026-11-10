@@ -72,6 +72,13 @@ object DispatchTrigger {
         return listWords.containsMatchIn(t)
     }
 
+    /**
+     * AI 自己判斷要派工時，句子裡一定要有「派工」兩字才放行（倬的規則：要派工單會說「派工」或「派工單」）。
+     * 起因：「待辦事項新增 APP 自動備份」被 AI 當成開發需求送成派工單。
+     * 開頭的固定觸發詞（我有個點子、叫利姆路…）由 [parse] 處理，不經 AI，不受這條限制。
+     */
+    fun aiMayDispatch(utterance: String): Boolean = utterance.replace(Regex("\\s+"), "").contains("派工")
+
     const val MAX_LENGTH = 5000
 }
 

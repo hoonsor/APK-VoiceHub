@@ -175,7 +175,25 @@ class Orchestrator(
 
         var leaves = false
         var round = 0
+        var dispatchRetried = false
         while (true) {
+            // AI 想派工但倬沒說「派工」：退回請 AI 重想一次；還是要派工就拿掉，不送單
+            if (plan.calls.any { it.action == "dispatch_send" } && !DispatchTrigger.aiMayDispatch(utterance)) {
+                if (!dispatchRetried && !offline) {
+                    dispatchRetried = true
+                    messages += ChatMessage("user", Planner.NO_DISPATCH_HINT)
+                    plan = try {
+                        val raw = complete(messages)
+                        messages += ChatMessage("assistant", raw)
+                        adjusted(Planner.parsePlan(raw), utterance)
+                    } catch (e: Exception) {
+                        Plan("", emptyList())
+                    }
+                    continue
+                }
+                val rest = plan.calls.filter { it.action != "dispatch_send" }
+                plan = if (rest.isEmpty()) Plan("這句我不確定要做什麼。要送派工單的話，請在句子裡說「派工」。", emptyList()) else plan.copy(calls = rest)
+            }
             if (plan.calls.isEmpty()) {
                 val text = plan.say.ifBlank { "嗯，我沒聽懂，可以再說一次嗎？" }
                 return remember(utterance, Reply(text, leaves, expectsAnswer = isQuestion(text)))

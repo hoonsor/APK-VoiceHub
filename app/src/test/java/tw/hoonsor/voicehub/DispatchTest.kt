@@ -34,6 +34,15 @@ class DispatchTriggerTest {
         assertEquals("", DispatchTrigger.extract("幫我派工。"))
     }
 
+    @Test fun aiNeedsDispatchWord() {
+        // 2026-11-10 誤判：待辦事項被 AI 送成派工單
+        assertTrue(!DispatchTrigger.aiMayDispatch("待辦事項新增APP自動備份"))
+        assertTrue(!DispatchTrigger.aiMayDispatch("幫我做一個記帳 APP"))
+        assertTrue(DispatchTrigger.aiMayDispatch("開一張派工單，APP 要自動備份"))
+        assertTrue(DispatchTrigger.aiMayDispatch("這個幫我 派 工 一下"))
+        assertNull(DispatchTrigger.parse("待辦事項新增APP自動備份"))
+    }
+
     @Test fun notDispatch() {
         assertNull(DispatchTrigger.extract("打開 LINE"))
         assertNull(DispatchTrigger.extract("明天七點叫我"))

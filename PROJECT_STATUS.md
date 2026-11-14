@@ -25,6 +25,7 @@
 - [ ] Claude Design 版面方案比較（SOP 第 3 階段，事後補）
 - [ ] 備份四件套（F23）
 - [ ] 各 APP（鬧鐘、照片整理箱、輸入法、螢幕翻譯）補 Agent API
+- [ ] 自建地圖（tw.hoonsor.bikemap，94 號）配合（協定第 7 節「APP 需要大腦特別處理」，2026-11-14 登記）：句子含 `(?i)(you|u)[\s\-]?bike|微笑單車|優拜克` 時跳過 `Places.shortcut`／`Places.goTo`／`OfflineParser` 的導航快速路徑，交給 AI 選 `trip_navigate`；內建 `map_navigate` 的 description 補「提到 YouBike／U-Bike 改用自建地圖」；加單元測試（「導航去台北車站騎 YouBike」不得變成 map_navigate）。與自建地圖第一個有 Agent API 的版本一起上線。細節見 hoonsor/APK-BikeMap `docs/AGENT_API.md`「語音總控需要配合的事」
 
 ## 版本歷程
 | 版本 | 日期 | commit | 變更 | 為什麼 |

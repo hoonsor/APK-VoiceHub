@@ -122,3 +122,25 @@ class CloudVoiceStreamTest {
         assertTrue(p.error!!.contains("2056"))
     }
 }
+
+class SttPunctuationTest {
+    @Test fun promptAsksForPunctuation() {
+        val p = tw.hoonsor.voicehub.assistant.AssistantViewModel.sttPrompt(emptyList())
+        assertTrue(p.contains("標點"))
+        // 例句本身要有句中標點，Whisper 才會模仿
+        assertTrue(p.contains("叫我，提醒我"))
+        assertTrue(!p.contains("派工"))
+    }
+
+    @Test fun punctuatedTranscriptStillMatchesOffline() {
+        assertEquals("flashlight_set", FastPath.match("手電筒打開。")?.action)
+        assertEquals("timer_set", FastPath.match("計時五分鐘。")?.action)
+        assertEquals("alarm_set", FastPath.match("早上七點，叫我。")?.action)
+    }
+
+    @Test fun punctuatedDispatchTrigger() {
+        val r = tw.hoonsor.voicehub.dispatch.DispatchTrigger.parse("派工，幫行事曆加上週視圖。")!!
+        assertEquals("幫行事曆加上週視圖。", r.text)
+        assertTrue(tw.hoonsor.voicehub.dispatch.DispatchTrigger.aiMayDispatch("派工，幫我改"))
+    }
+}

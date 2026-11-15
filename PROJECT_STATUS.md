@@ -1,6 +1,6 @@
 # PROJECT_STATUS — 語音總控（APK-VoiceHub）
 
-- 目前版本：v0.11.0（main 推送後由 CI 發佈 latest；使用說明書已在模擬器驗證）
+- 目前版本：v0.11.1（main 推送後由 CI 發佈 latest；使用說明書已在模擬器驗證）
 - 程式碼：`D:dev\APK-VoiceHub`；專案資料夾 `D:\01-Project\42-語音總控制APP`（CODE_LOCATION.txt 指過來）
 - 套件：`tw.hoonsor.voicehub`（LAB：`tw.hoonsor.voicehub.lab`）
 
@@ -30,6 +30,7 @@
 ## 版本歷程
 | 版本 | 日期 | commit | 變更 | 為什麼 |
 |---|---|---|---|---|
+| v0.11.1 | 2026-11-15 | （本次） | Whisper 提示詞改成要求全形標點，例句本身也加上標點（Whisper 會模仿提示的寫法）；例句不放「派工」以免誤聽；新增 SttPunctuationTest（有標點時離線句型、派工觸發詞照常運作） | 倬發現語音總控的辨識結果幾乎沒標點，注音 APP 卻很正確；一次講多件事時斷句不明會影響解析，存下的待辦、派工內容也難讀 |
 | v0.11.0 | 2026-11-10 | （本次） | 每日自動備份：新增共用模組 tw/hoonsor/backup（hoonsor-kit android-auto-backup 1.0.0，Java、零依賴、JobScheduler＋MediaStore），每天把 settings 偏好匯出成 JSON 存到 Documents/HoonsorBackup/VoiceHub/（LAB 版 VoiceHub-LAB），內容沒變不另存、只留 7 份；設定頁新增「自動備份」：開關、上次備份、立即備份、從備份檔還原；API key（vault）不備份 | 倬要所有自製 APP 定期備份到 Dropbox，選方案一（APP 存到同一資料夾＋Dropsync） |
 | v0.10.1 | 2026-11-10 | 1d65b9a | 修正派工誤判：AI 自己判斷要派工時，句子裡沒有「派工」就退回重想一次，仍要派工就拿掉不送；提示詞與動作說明同步改成「沒說派工不可派工、說待辦用待辦」；開頭固定觸發詞（我有個點子、叫利姆路…）不變 | 倬說「待辦事項新增APP自動備份」被送成第 485 號派工單；倬定規則：要派工會說「派工」或「派工單」 |
 | v0.10.0 | 2026-11-10 | （本次） | 用說的新增、改時間、刪除行程：CalendarCommand 在手機上用規則解析句子（日期、上下午、時間範圍、地點、指定行事曆），CalendarVoice 找活動、組確認句，倬說「確定」後 CalendarWriter 直接寫 CalendarContract（Google 同步推上雲端，不用 Google API）；重複活動、別人邀請的、唯讀行事曆不改；等確認時說了別的長句當新指令；設定頁權限改成讀寫一起要，新增「用說的新增行程時寫到」選行事曆 | 倬要用語音新增 Google 日曆事件，並一起做改時間、刪除 |
@@ -82,6 +83,7 @@
 26. [ ] 說「把明天的考績會改到三點」→ 確定 → 時間改了、長度不變；說「取消明天的考績會」→ 確定 → 刪掉，網頁版垃圾桶看得到
 27. [ ] 說「幫我在學校行事曆加一個下週五下午三點家長會」（換成你實際的行事曆名稱）→ 確認句唸出那個行事曆
 29. [ ] 裝 Dropsync，同步 Documents/HoonsorBackup 到 Dropbox；設定 › 自動備份 按「立即備份」→ Dropbox 出現 VoiceHub-日期.json；改一個常用地點再從那個檔還原 → 地點回到原本的值
+30. [ ] （Groq 辨識）說「明天下午三點開會，前一小時提醒我」這類兩段話 → 對話框裡的辨識文字有逗號、句號；說「手電筒打開」→ 照常馬上執行
 28. [ ] 說「待辦事項新增 APP 自動備份」→ 加到待辦事項，不送派工單；說「派工，APP 要自動備份」→ 照常送派工單
 
 ## 已知問題
@@ -98,6 +100,11 @@
 5. 主動代理化：等倬決定 PRD 方向稿的 D1～D8（`D:\01-Project\42-語音總控制APP\docs\PRD-Duet化方向-v0.1.md`），先做 M0
 
 ## 交接紀錄
+
+### 2026-11-15／電腦 A（v0.11.1 辨識結果加標點）
+- 完成：AssistantViewModel.STT_PROMPT 改成要求全形標點、例句帶標點；companion 改 internal 供測試；SttPunctuationTest 3 項通過。
+- 決定＋原因：只改 Whisper 提示詞，不加 AI 潤飾層（每句多等 1～2 秒，解析意圖的 AI 本來就讀得懂沒標點的句子）；例句不放「派工」（提示裡的詞較容易被聽出來，怕誤派）。
+- 未驗證：實機效果（待實機驗證 30）；手機內建辨識（SYSTEM 引擎）不吃提示詞，仍可能沒標點。
 
 ### 2026-11-10／電腦 A（v0.11.0 每日自動備份）
 - 完成：共用模組 android-auto-backup 1.0.0（已收進 44-共用模組庫並打 tag）；VoiceHubBackupSource＋SettingsBackup（JSON 帶型別，可還原）；設定頁 AutoBackupCard；BackupTest（檔名、只刪自己的檔、保留 7 份、設定往返）。模擬器（LAB）驗證：jobscheduler 強制執行寫出 Documents/HoonsorBackup/VoiceHub-LAB/*.json、內容沒變第二次不另存、立即備份寫出含設定的新檔、設定頁顯示上次備份時間。

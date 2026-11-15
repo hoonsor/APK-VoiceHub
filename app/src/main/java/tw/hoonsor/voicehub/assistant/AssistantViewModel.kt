@@ -204,9 +204,14 @@ class AssistantViewModel : ViewModel() {
         cancel()
     }
 
-    private companion object {
-        /** 給 Whisper 的提示：要繁體中文、台灣用語 */
-        const val STT_PROMPT = "以下是台灣繁體中文的手機語音指令，例如：打開LINE、明天早上七點叫我、計時五分鐘、手電筒打開。"
+    internal companion object {
+        /**
+         * 給 Whisper 的提示：要繁體中文、台灣用語、全形標點。
+         * Whisper 會模仿提示的寫法，例句沒標點它就不加（v0.11.0 以前就是這樣），所以例句一定要有標點。
+         * 離線句型（OfflineParser.normalize）與派工觸發詞（DispatchTrigger）都會先去掉標點，不受影響。
+         * 例句不要放「派工」：提示裡的詞 Whisper 會比較容易聽出來，可能造成誤派。
+         */
+        const val STT_PROMPT = "以下是台灣繁體中文的手機語音指令，句子都加上全形標點符號。例如：打開LINE。明天早上七點叫我，提醒我帶便當。計時五分鐘。明天下午三點開會，前一小時提醒我。"
 
         /** 常講的英文名稱：Whisper 沒看過拼法時常聽成別的字 */
         private val STT_WORDS = listOf(

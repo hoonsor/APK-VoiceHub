@@ -326,14 +326,14 @@ fun HealthScreen() {
         var shareMsg by remember { mutableStateOf("") }
         val sharePending = remember(tick) { Graph.references.size }
         HealthItem(
-            "分享圖片到海報工坊",
-            shareMsg.ifBlank { "在相簿或截圖按分享 › 做成海報樣板。需要手機的 Tailscale 開著、A 電腦開機。" } + if (sharePending > 0) "\n待補送：$sharePending 張" else "",
+            "分享給專案學習",
+            shareMsg.ifBlank { "在相簿、截圖或 YouTube 按分享 › 分享給專案學習，選海報、影片或遊戲美術。需要手機的 Tailscale 開著、A 電腦開機。" } + if (sharePending > 0) "\n待補送：$sharePending 筆" else "",
             if (sharePending > 0) false else null,
         ) {
             if (sharePending > 0) OutlineButton("立即補送", icon = Glyph.Refresh) {
                 scope.launch {
                     val rep = Graph.references.flush()
-                    shareMsg = if (rep.remaining > 0) "仍連不上，還有 ${rep.remaining} 張" else "補送完成：${rep.sent} 張"
+                    shareMsg = if (rep.remaining > 0) "仍連不上，還有 ${rep.remaining} 筆" else "補送完成：${rep.sent} 筆"
                     tick++
                 }
             }
@@ -521,12 +521,15 @@ fun SettingsScreen() {
             Text("說「派工…」「我有個點子…」「叫利姆路…」開頭，原話會直接送出，不經 AI 改寫。", color = C.muted, style = MaterialTheme.typography.bodyMedium)
         }
 
-        SectionTitle("海報工坊（分享圖片）")
+        SectionTitle("分享給專案學習")
         Card {
             var workshop by remember { mutableStateOf(s.workshopBaseUrl) }
-            Field("閘道網址（經 Tailscale，不需金鑰）", workshop, { workshop = it; s.workshopBaseUrl = it.ifBlank { Settings.DEFAULT_WORKSHOP_BASE } })
+            Field("海報工坊閘道網址（65 號，海報的圖片）", workshop, { workshop = it; s.workshopBaseUrl = it.ifBlank { Settings.DEFAULT_WORKSHOP_BASE } })
             Spacer(Modifier.height(8.dp))
-            Text("圖片直接傳到你的電腦，不經過 AI 服務。輸入後立刻生效。", color = C.muted, style = MaterialTheme.typography.bodyMedium)
+            var inbox by remember { mutableStateOf(s.inboxBaseUrl) }
+            Field("喜好收件匣網址（101 號，影片、遊戲美術）", inbox, { inbox = it; s.inboxBaseUrl = it.ifBlank { Settings.DEFAULT_INBOX_BASE } })
+            Spacer(Modifier.height(8.dp))
+            Text("經 Tailscale 直接傳到你的電腦，不經過語音總控的 AI。輸入後立刻生效。", color = C.muted, style = MaterialTheme.typography.bodyMedium)
         }
 
         SectionTitle("語音")

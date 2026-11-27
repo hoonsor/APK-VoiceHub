@@ -41,7 +41,7 @@ object Graph {
         app = context.applicationContext
         settings = Settings(app)
         dispatch = DispatchService(app) { settings.dispatchBaseUrl }
-        references = ReferenceOutbox(app) { settings.workshopBaseUrl }
+        references = ReferenceOutbox(app, { settings.workshopBaseUrl }, { settings.inboxBaseUrl })
         registry = ToolRegistry(app)
         orchestrator = Orchestrator(app, settings, registry)
     }

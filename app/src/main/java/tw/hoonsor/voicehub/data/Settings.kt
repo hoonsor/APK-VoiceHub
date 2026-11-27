@@ -168,6 +168,16 @@ class Settings(context: Context) {
         get() = p.getString("workshopBaseUrl", DEFAULT_WORKSHOP_BASE) ?: DEFAULT_WORKSHOP_BASE
         set(v) = p.edit().putString("workshopBaseUrl", v.trim()).apply()
 
+    // ---- 喜好收件匣（101 號，經 Tailscale；分享影片連結、遊戲畫面時用） ----
+    var inboxBaseUrl: String
+        get() = p.getString("inboxBaseUrl", DEFAULT_INBOX_BASE) ?: DEFAULT_INBOX_BASE
+        set(v) = p.edit().putString("inboxBaseUrl", v.trim()).apply()
+
+    /** 分享畫面上次選的目標（ShareTarget.key） */
+    var lastShareTarget: String?
+        get() = p.getString("lastShareTarget", null)
+        set(v) = p.edit().putString("lastShareTarget", v).apply()
+
     val hasLlm get() = !llmKey.isNullOrBlank()
     val hasGroq get() = !groqKey.isNullOrBlank()
     /** 雲端聲音要用 MiniMax 的金鑰：AI 主力設成 MiniMax 才有 */
@@ -181,6 +191,7 @@ class Settings(context: Context) {
         const val DEFAULT_FALLBACK_MODEL = "llama-3.3-70b-versatile"
         const val DEFAULT_DISPATCH_BASE = "https://hoonsoropenclaw.tail71361e.ts.net"
         const val DEFAULT_WORKSHOP_BASE = "https://desktop-5dm4edt.tail71361e.ts.net:8443"
+        const val DEFAULT_INBOX_BASE = "https://desktop-5dm4edt.tail71361e.ts.net:8444"
     }
 }
 

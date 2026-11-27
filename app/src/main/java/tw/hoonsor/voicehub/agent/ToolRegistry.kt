@@ -81,13 +81,13 @@ class ToolRegistry(private val context: Context) {
     }
 
     /** 呼叫 ContentProvider.call()，結果在 Bundle 的 json；逾時回 null */
-    suspend fun call(authority: String, method: String, json: JSONObject?): JSONObject? = withContext(Dispatchers.IO) {
+    suspend fun call(authority: String, method: String, json: JSONObject?, timeoutMs: Long = AgentApi.TIMEOUT_MS): JSONObject? = withContext(Dispatchers.IO) {
         val extras = Bundle().apply { if (json != null) putString(AgentApi.EXTRA_JSON, json.toString()) }
         // ContentResolver.call 會卡住執行緒，用 async＋逾時避免整個對話被一個 APP 拖住
         val deferred = async(Dispatchers.IO) {
             context.contentResolver.call(Uri.parse("content://$authority"), method, null, extras)
         }
-        val bundle = withTimeoutOrNull(AgentApi.TIMEOUT_MS) { deferred.await() }
+        val bundle = withTimeoutOrNull(timeoutMs) { deferred.await() }
         if (bundle == null) {
             deferred.cancel()
             return@withContext null
@@ -124,8 +124,8 @@ class ToolRegistry(private val context: Context) {
             ?: return AgentResult.fail(AgentApi.UNAVAILABLE, "${catalog.app} 已不在手機上")
         val req = AgentApi.request(UUID.randomUUID().toString(), action, params, dryRun, confirmToken, utterance)
         return try {
-            val json = call(remote.authority, AgentApi.METHOD_EXECUTE, req)
-                ?: return AgentResult.fail(AgentApi.UNAVAILABLE, "${catalog.app} 超過 5 秒沒有回應")
+            val json = call(remote.authority, AgentApi.METHOD_EXECUTE, req, AgentApi.EXECUTE_TIMEOUT_MS)
+                ?: return AgentResult.fail(AgentApi.UNAVAILABLE, "${catalog.app} 超過 30 秒沒有回應")
             AgentResult.fromJson(json)
         } catch (e: Exception) {
             Log.w("ToolRegistry", "execute $action failed", e)

@@ -144,6 +144,10 @@ class Settings(context: Context) {
     var briefCloudVoice: Boolean
         get() = p.getBoolean("briefCloudVoice", false)
         set(v) = p.edit().putBoolean("briefCloudVoice", v).apply()
+    /** 行程唸完接著唸天氣（要裝倬的天氣；沒裝或沒回應就只唸行程） */
+    var briefWeather: Boolean
+        get() = p.getBoolean("briefWeather", true)
+        set(v) = p.edit().putBoolean("briefWeather", v).apply()
     /** 不要唸的行事曆 id */
     var briefExcluded: Set<Long>
         get() = p.getStringSet("briefExcluded", emptySet()).orEmpty().mapNotNull { it.toLongOrNull() }.toSet()

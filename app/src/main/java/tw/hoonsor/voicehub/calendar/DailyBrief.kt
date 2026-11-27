@@ -30,6 +30,8 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
+import org.json.JSONObject
+import tw.hoonsor.voicehub.agent.ToolRegistry
 
 /**
  * 每天定時唸行程（從今天或明天起，連續 1～3 天）：AlarmManager 精準鬧鐘 → [DailyBriefReceiver] → [DailyBriefService]（前台服務，唸完就結束）。
@@ -50,6 +52,23 @@ object DailyBrief {
     fun dates(today: LocalDate, start: Int, days: Int, weekend: Boolean): List<LocalDate> =
         (0 until days.coerceIn(1, MAX_DAYS)).map { today.plusDays(start.coerceIn(0, 1).toLong() + it) }
             .filter { weekend || (it.dayOfWeek != DayOfWeek.SATURDAY && it.dayOfWeek != DayOfWeek.SUNDAY) }
+
+    /** 倬的天氣（tw.hoonsor.weather）的 Agent API；LAB 版由 ToolRegistry 依動作名找到 */
+    const val WEATHER_PKG = "tw.hoonsor.weather"
+
+    /**
+     * 要跟天氣 APP 要哪些播報（純邏輯，有測試）：唸到今天 → weather_now（目前位置，現在到接下來幾小時）；
+     * 唸到明天 → weather_tomorrow（place=auto：明天上班查學校、其他查家）。後天以後天氣 APP 沒有單日播報，不唸。
+     */
+    fun weatherCalls(today: LocalDate, dates: List<LocalDate>): List<Pair<String, JSONObject>> = buildList {
+        if (today in dates) add("weather_now" to JSONObject().put("place", "current"))
+        if (today.plusDays(1) in dates) add("weather_tomorrow" to JSONObject().put("place", "auto"))
+    }
+
+    /** 手機上有沒有倬的天氣（正式版或 LAB 版） */
+    fun weatherInstalled(ctx: Context): Boolean = listOf(WEATHER_PKG, "$WEATHER_PKG.lab").any { pkg ->
+        runCatching { ctx.packageManager.getPackageInfo(pkg, 0) }.isSuccess
+    }
 
     /** 設定頁與通知用：「明天」「今天、明天、後天」 */
     fun rangeWord(start: Int, days: Int): String =
@@ -142,11 +161,16 @@ class DailyBriefService : Service() {
         val brief = withContext(Dispatchers.IO) {
             CalendarBrief.composeDays(today, dates.map { it to CalendarReader.events(this@DailyBriefService, it, s.briefExcluded) })
         }
-        if (brief.count == 0 && !s.briefWhenEmpty && !force) return
+        val weather = if (s.briefWeather) weather(Graph.registry, today, dates) else emptyList()
+        // 沒有行程又不唸空行程時，有天氣就只唸天氣
+        val quietCalendar = brief.count == 0 && !s.briefWhenEmpty && !force
+        if (quietCalendar && weather.isEmpty()) return
         val head = if (dates.size == 1) "${CalendarBrief.dayWord(dates[0], today)}${CalendarBrief.dateWord(dates[0])}".trim()
         else dates.joinToString("、") { CalendarBrief.dayWord(it, today).ifEmpty { CalendarBrief.shortDate(it) } }
         val title = "$head：" + if (brief.count == 0) "沒有行程" else "${brief.count} 個行程"
-        post(title, brief.lines.joinToString("\n").ifEmpty { "沒有行程" })
+        val lines = (if (quietCalendar) emptyList() else brief.lines.ifEmpty { listOf("沒有行程") }) + weather.map { "【天氣】$it" }
+        post(title, lines.joinToString("\n"))
+        val spoken = (listOfNotNull(brief.spoken.takeUnless { quietCalendar }) + weather).joinToString(" ")
 
         val audio = getSystemService(AudioManager::class.java)
         // 通話中不唸，只留通知
@@ -156,9 +180,22 @@ class DailyBriefService : Service() {
             .build()
         audio.requestAudioFocus(focus)
         try {
-            Graph.speaker.speak(brief.spoken, s.speechRate, allowCloud = s.briefCloudVoice, waitMs = 10_000)
+            Graph.speaker.speak(spoken, s.speechRate, allowCloud = s.briefCloudVoice, waitMs = 10_000)
         } finally {
             audio.abandonAudioFocusRequest(focus)
+        }
+    }
+
+    /** 跟天氣 APP 要播報句；沒裝、沒回應或出錯就略過（只唸行程） */
+    private suspend fun weather(registry: ToolRegistry, today: LocalDate, dates: List<LocalDate>): List<String> {
+        val calls = DailyBrief.weatherCalls(today, dates)
+        if (calls.isEmpty()) return emptyList()
+        // 定時觸發時 APP 可能剛被叫起來，還沒掃描過其他 APP
+        if (registry.resolve(DailyBrief.WEATHER_PKG, calls.first().first)?.builtin != false) runCatching { registry.refresh() }
+        return calls.mapNotNull { (action, params) ->
+            val r = runCatching { registry.execute(DailyBrief.WEATHER_PKG, action, params) }.getOrNull()
+            if (r?.ok == true) r.summary.trim().takeIf { it.isNotEmpty() }
+            else { Log.w("DailyBrief", "天氣 $action 失敗：${r?.errorMessage}"); null }
         }
     }
 

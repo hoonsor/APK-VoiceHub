@@ -66,6 +66,8 @@ fun DailyBriefCard() {
     var weekend by remember { mutableStateOf(s.briefWeekend) }
     var empty by remember { mutableStateOf(s.briefWhenEmpty) }
     var cloud by remember { mutableStateOf(s.briefCloudVoice) }
+    var weatherOn by remember { mutableStateOf(s.briefWeather) }
+    val weatherApp = remember(tick) { DailyBrief.weatherInstalled(ctx) }
     var excluded by remember { mutableStateOf(s.briefExcluded) }
     var next by remember { mutableStateOf(if (s.briefEnabled) DailyBrief.sync(ctx) else null) }
 
@@ -99,7 +101,13 @@ fun DailyBriefCard() {
         }
         Spacer(Modifier.height(6.dp))
         ToggleRow("週末也唸", "關掉時，星期六、日的行程不唸；要唸的日子都是週末就不出聲", weekend) { weekend = it; s.briefWeekend = it }
-        ToggleRow("沒有行程也唸", "關掉時，要唸的日子都沒有行程就不出聲", empty) { empty = it; s.briefWhenEmpty = it }
+        ToggleRow("沒有行程也唸", "關掉時，要唸的日子都沒有行程就不唸行程（有開天氣就只唸天氣）", empty) { empty = it; s.briefWhenEmpty = it }
+        ToggleRow(
+            "一起唸天氣",
+            "行程唸完接著唸倬的天氣的播報：唸到今天時唸現在到接下來幾小時，唸到明天時唸明天天氣（明天上班查學校、其他查家）。天氣 APP 沒回應就只唸行程",
+            weatherOn,
+        ) { weatherOn = it; s.briefWeather = it }
+        if (weatherOn && !weatherApp) Text("手機上沒有倬的天氣，不會唸天氣。", color = C.warn, style = MaterialTheme.typography.bodyMedium)
         ToggleRow("用 MiniMax 雲端聲音唸", "比較自然，但行程內容會送到 MiniMax 國際版；有學校或人事行程時請保持關閉", cloud) { cloud = it; s.briefCloudVoice = it }
         if (cloud) Text("⚠ 行程標題可能有人名或公務內容，送雲端前不會去識別化。", color = C.warn, style = MaterialTheme.typography.bodyMedium)
 

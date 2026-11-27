@@ -146,7 +146,10 @@ object AgentApi {
     const val METHOD_EXECUTE = "execute"
     const val METHOD_HEALTH = "health"
     const val EXTRA_JSON = "json"
+    /** describe、health：5 秒 */
     const val TIMEOUT_MS = 5_000L
+    /** execute：協定允許要連網的動作覆寫到 30 秒（天氣 15 秒、資料包查詢 30 秒），APP 端會自己先逾時回錯 */
+    const val EXECUTE_TIMEOUT_MS = 30_000L
 
     const val INVALID_PARAMS = "INVALID_PARAMS"
     const val NOT_FOUND = "NOT_FOUND"

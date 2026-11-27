@@ -113,6 +113,16 @@ class CalendarBriefTest {
         assertEquals("明天、後天、大後天", DailyBrief.rangeWord(1, 3))
     }
 
+    @Test fun weatherCalls() {
+        fun names(dates: List<LocalDate>) = DailyBrief.weatherCalls(today, dates).map { it.first }
+        assertEquals(listOf("weather_tomorrow"), names(listOf(tomorrow))) // 預設：晚上唸明天
+        assertEquals(listOf("weather_now", "weather_tomorrow"), names(listOf(today, tomorrow))) // 早上唸今天＋明天
+        assertEquals(listOf("weather_now"), names(listOf(today)))
+        assertEquals(emptyList<String>(), names(listOf(today.plusDays(2)))) // 後天以後沒有單日播報
+        assertEquals("auto", DailyBrief.weatherCalls(today, listOf(tomorrow)).single().second.getString("place"))
+        assertEquals("current", DailyBrief.weatherCalls(today, listOf(today)).single().second.getString("place"))
+    }
+
     @Test fun composeSeveralDays() {
         val b = CalendarBrief.composeDays(today, listOf(
             today to listOf(ev("朝會", at(today, 8), at(today, 9))),

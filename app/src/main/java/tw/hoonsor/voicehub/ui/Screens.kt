@@ -234,7 +234,7 @@ private fun skeleton(c: AgentCatalog, action: String): String {
 }
 
 @Composable
-private fun ChipRow(items: List<Pair<String, String>>, selected: String, onSelect: (String) -> Unit) {
+internal fun ChipRow(items: List<Pair<String, String>>, selected: String, onSelect: (String) -> Unit) {
     Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         items.forEach { (key, label) ->
             val on = key == selected
@@ -559,7 +559,7 @@ fun SettingsScreen() {
         SectionTitle("音量鍵叫出（藍牙耳機也可以）")
         VolumeGestureCard()
 
-        SectionTitle("明天行程提醒")
+        SectionTitle("每日行程提醒")
         DailyBriefCard()
 
         SectionTitle("自動備份")

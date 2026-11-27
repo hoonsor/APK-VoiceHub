@@ -336,7 +336,7 @@ class BuiltinActions(private val context: Context) {
 
     private fun calendarAgenda(day: Int): AgentResult {
         if (!tw.hoonsor.voicehub.calendar.CalendarReader.hasPermission(context)) {
-            return AgentResult.fail(AgentApi.PERMISSION_DENIED, "還沒允許讀取行事曆，請到 語音總控 › 設定 › 明天行程提醒 按「允許」")
+            return AgentResult.fail(AgentApi.PERMISSION_DENIED, "還沒允許讀取行事曆，請到 語音總控 › 設定 › 每日行程提醒 按「允許」")
         }
         val today = java.time.LocalDate.now()
         val date = today.plusDays(day.toLong())

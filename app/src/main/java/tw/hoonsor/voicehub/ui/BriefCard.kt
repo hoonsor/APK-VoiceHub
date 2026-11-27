@@ -39,7 +39,7 @@ import tw.hoonsor.voicehub.calendar.DailyBrief
 import tw.hoonsor.voicehub.ui.theme.C
 import java.time.format.DateTimeFormatter
 
-/** 明天行程提醒：開關、時間、要唸哪些行事曆、權限狀態、立即試唸。選了立刻生效，不用按儲存。 */
+/** 每日行程提醒：開關、時間、從哪天起唸幾天、要唸哪些行事曆、權限狀態、立即試唸。選了立刻生效，不用按儲存。 */
 @Composable
 fun DailyBriefCard() {
     val ctx = LocalContext.current
@@ -61,6 +61,8 @@ fun DailyBriefCard() {
 
     var on by remember { mutableStateOf(s.briefEnabled) }
     var minute by remember { mutableIntStateOf(s.briefMinute) }
+    var start by remember { mutableIntStateOf(s.briefStart) }
+    var days by remember { mutableIntStateOf(s.briefDays) }
     var weekend by remember { mutableStateOf(s.briefWeekend) }
     var empty by remember { mutableStateOf(s.briefWhenEmpty) }
     var cloud by remember { mutableStateOf(s.briefCloudVoice) }
@@ -70,7 +72,7 @@ fun DailyBriefCard() {
     fun resync() { next = DailyBrief.sync(ctx) }
 
     Card {
-        ToggleRow("每天唸明天的行程", "到了設定的時間，用手機內建聲音唸出明天的行事曆，並留一則通知", on) {
+        ToggleRow("每天定時唸行程", "到了設定的時間，用手機內建聲音唸出選好的那幾天行事曆，並留一則通知", on) {
             on = it
             s.briefEnabled = it
             if (it && !granted) askCalendar()
@@ -87,9 +89,17 @@ fun DailyBriefCard() {
                 }, minute / 60, minute % 60, true).show()
             }
         }
+        Text("從哪天開始唸", color = C.text, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 10.dp, bottom = 6.dp))
+        ChipRow(listOf("0" to "今天", "1" to "明天"), start.toString()) { start = it.toInt(); s.briefStart = start }
+        Text("唸幾天", color = C.text, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 10.dp, bottom = 6.dp))
+        ChipRow((1..DailyBrief.MAX_DAYS).map { "$it" to "$it 天" }, days.toString()) { days = it.toInt(); s.briefDays = days }
+        Text("會唸：" + DailyBrief.rangeWord(start, days), color = C.muted, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 6.dp))
+        if (start == 0 && minute >= 18 * 60) {
+            Text("提醒時間在晚上，「今天」大多已經過了；晚上唸建議從明天開始。", color = C.warn, style = MaterialTheme.typography.bodyMedium)
+        }
         Spacer(Modifier.height(6.dp))
-        ToggleRow("週末也唸", "關掉時，星期五、六晚上不唸（明天是週末）", weekend) { weekend = it; s.briefWeekend = it }
-        ToggleRow("沒有行程也唸", "關掉時，明天沒行程就不出聲", empty) { empty = it; s.briefWhenEmpty = it }
+        ToggleRow("週末也唸", "關掉時，星期六、日的行程不唸；要唸的日子都是週末就不出聲", weekend) { weekend = it; s.briefWeekend = it }
+        ToggleRow("沒有行程也唸", "關掉時，要唸的日子都沒有行程就不出聲", empty) { empty = it; s.briefWhenEmpty = it }
         ToggleRow("用 MiniMax 雲端聲音唸", "比較自然，但行程內容會送到 MiniMax 國際版；有學校或人事行程時請保持關閉", cloud) { cloud = it; s.briefCloudVoice = it }
         if (cloud) Text("⚠ 行程標題可能有人名或公務內容，送雲端前不會去識別化。", color = C.warn, style = MaterialTheme.typography.bodyMedium)
 

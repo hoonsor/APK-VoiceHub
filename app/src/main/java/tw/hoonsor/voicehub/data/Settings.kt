@@ -116,7 +116,7 @@ class Settings(context: Context) {
         get() = p.getBoolean("autoClose", true)
         set(v) = p.edit().putBoolean("autoClose", v).apply()
 
-    // ---- 明天行程提醒（只在手機上整理與朗讀，不送 AI） ----
+    // ---- 每日行程提醒（只在手機上整理與朗讀，不送 AI） ----
     var briefEnabled: Boolean
         get() = p.getBoolean("briefEnabled", false)
         set(v) = p.edit().putBoolean("briefEnabled", v).apply()
@@ -124,7 +124,15 @@ class Settings(context: Context) {
     var briefMinute: Int
         get() = p.getInt("briefMinute", 21 * 60)
         set(v) = p.edit().putInt("briefMinute", v.coerceIn(0, 24 * 60 - 1)).apply()
-    /** 明天是星期六、日時也唸 */
+    /** 從哪天開始唸：0＝今天、1＝明天（預設明天，與 v0.12.0 以前相同） */
+    var briefStart: Int
+        get() = p.getInt("briefStart", 1).coerceIn(0, 1)
+        set(v) = p.edit().putInt("briefStart", v.coerceIn(0, 1)).apply()
+    /** 連續唸幾天，1～3 天（預設 1） */
+    var briefDays: Int
+        get() = p.getInt("briefDays", 1).coerceIn(1, 3)
+        set(v) = p.edit().putInt("briefDays", v.coerceIn(1, 3)).apply()
+    /** 星期六、日的行程也唸 */
     var briefWeekend: Boolean
         get() = p.getBoolean("briefWeekend", true)
         set(v) = p.edit().putBoolean("briefWeekend", v).apply()

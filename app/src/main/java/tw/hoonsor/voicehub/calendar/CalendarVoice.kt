@@ -128,6 +128,6 @@ class CalendarVoice(private val ctx: Context, private val settings: Settings) {
 
     companion object {
         const val SEARCH_DAYS = 60L
-        const val NO_PERMISSION = "還沒允許語音總控修改行事曆。請到 設定 › 明天行程提醒 按「允許行事曆權限」。"
+        const val NO_PERMISSION = "還沒允許語音總控修改行事曆。請到 設定 › 每日行程提醒 按「允許行事曆權限」。"
     }
 }

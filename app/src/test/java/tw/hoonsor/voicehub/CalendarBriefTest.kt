@@ -1,7 +1,6 @@
 package tw.hoonsor.voicehub
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -100,8 +99,30 @@ class CalendarBriefTest {
         assertEquals(LocalDateTime.of(2026, 11, 9, 21, 0), DailyBrief.nextFire(now, 21 * 60))
         assertEquals(LocalDateTime.of(2026, 11, 10, 7, 30), DailyBrief.nextFire(now, 7 * 60 + 30))
         assertEquals(LocalDateTime.of(2026, 11, 10, 20, 0), DailyBrief.nextFire(now, 20 * 60)) // 剛好現在：排明天
-        assertTrue(DailyBrief.skipFor(LocalDate.of(2026, 11, 14), weekend = false)) // 星期六
-        assertFalse(DailyBrief.skipFor(LocalDate.of(2026, 11, 14), weekend = true))
-        assertFalse(DailyBrief.skipFor(LocalDate.of(2026, 11, 13), weekend = false)) // 星期五
+    }
+
+    @Test fun briefDates() {
+        val fri = LocalDate.of(2026, 11, 13)
+        assertEquals(listOf(fri.plusDays(1)), DailyBrief.dates(fri, start = 1, days = 1, weekend = true)) // 預設：只唸明天
+        assertEquals(emptyList<LocalDate>(), DailyBrief.dates(fri, start = 1, days = 1, weekend = false)) // 明天星期六：不唸
+        assertEquals(listOf(today, tomorrow), DailyBrief.dates(today, start = 0, days = 2, weekend = true))
+        assertEquals(listOf(fri), DailyBrief.dates(fri, start = 0, days = 3, weekend = false)) // 五六日：只剩星期五
+        assertEquals(3, DailyBrief.dates(today, start = 1, days = 9, weekend = true).size) // 最多三天
+        assertEquals("明天", DailyBrief.rangeWord(1, 1))
+        assertEquals("今天、明天、後天", DailyBrief.rangeWord(0, 3))
+        assertEquals("明天、後天、大後天", DailyBrief.rangeWord(1, 3))
+    }
+
+    @Test fun composeSeveralDays() {
+        val b = CalendarBrief.composeDays(today, listOf(
+            today to listOf(ev("朝會", at(today, 8), at(today, 9))),
+            tomorrow to emptyList(),
+        ))
+        assertEquals(1, b.count)
+        assertEquals("今天 11 月 9 日星期一，共有 1 個行程。早上 8 點，朝會。 明天 11 月 10 日星期二沒有行程。", b.spoken)
+        assertEquals(listOf("【今天 11/9（一）】", "08:00–09:00　朝會", "【明天 11/10（二）】", "沒有行程"), b.lines)
+        // 只有一天時跟原本一樣，不加日期標題
+        val one = CalendarBrief.composeDays(today, listOf(tomorrow to listOf(ev("考績會", at(tomorrow, 14, 30), at(tomorrow, 16)))))
+        assertEquals(CalendarBrief.compose(tomorrow, today, listOf(ev("考績會", at(tomorrow, 14, 30), at(tomorrow, 16)))), one)
     }
 }

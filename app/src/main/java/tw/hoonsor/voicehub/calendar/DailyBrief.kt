@@ -32,12 +32,13 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 
 /**
- * 每天定時唸明天的行程：AlarmManager 精準鬧鐘 → [DailyBriefReceiver] → [DailyBriefService]（前台服務，唸完就結束）。
+ * 每天定時唸行程（從今天或明天起，連續 1～3 天）：AlarmManager 精準鬧鐘 → [DailyBriefReceiver] → [DailyBriefService]（前台服務，唸完就結束）。
  * 開機、更新 APP、改時間或時區後重新排程（[DailyBriefReceiver] 一起處理）。
  */
 object DailyBrief {
     private const val TAG = "DailyBrief"
     const val ACTION_FIRE = "tw.hoonsor.voicehub.BRIEF_FIRE"
+    const val MAX_DAYS = 3
 
     /** 下一次要唸的時間（純邏輯，有測試） */
     fun nextFire(now: LocalDateTime, minuteOfDay: Int): LocalDateTime {
@@ -45,9 +46,14 @@ object DailyBrief {
         return if (today.isAfter(now)) today else today.plusDays(1)
     }
 
-    /** 明天是週末而且設定不唸週末 → 跳過 */
-    fun skipFor(tomorrow: LocalDate, weekend: Boolean) =
-        !weekend && (tomorrow.dayOfWeek == DayOfWeek.SATURDAY || tomorrow.dayOfWeek == DayOfWeek.SUNDAY)
+    /** 這次要唸的日子：start 0＝今天、1＝明天，連續 days 天；不唸週末時拿掉星期六、日（純邏輯，有測試） */
+    fun dates(today: LocalDate, start: Int, days: Int, weekend: Boolean): List<LocalDate> =
+        (0 until days.coerceIn(1, MAX_DAYS)).map { today.plusDays(start.coerceIn(0, 1).toLong() + it) }
+            .filter { weekend || (it.dayOfWeek != DayOfWeek.SATURDAY && it.dayOfWeek != DayOfWeek.SUNDAY) }
+
+    /** 設定頁與通知用：「明天」「今天、明天、後天」 */
+    fun rangeWord(start: Int, days: Int): String =
+        (0 until days.coerceIn(1, MAX_DAYS)).joinToString("、") { CalendarBrief.offsetWord(start.coerceIn(0, 1) + it) }
 
     private fun pending(ctx: Context) = PendingIntent.getBroadcast(
         ctx, 7, Intent(ctx, DailyBriefReceiver::class.java).setAction(ACTION_FIRE),
@@ -92,7 +98,7 @@ class DailyBriefReceiver : BroadcastReceiver() {
     }
 }
 
-/** 讀明天的行程、發通知、用手機內建聲音唸出來，唸完就停 */
+/** 讀選好的那幾天行程、發通知、用手機內建聲音唸出來，唸完就停 */
 class DailyBriefService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var job: Job? = null
@@ -112,7 +118,7 @@ class DailyBriefService : Service() {
         if (job?.isActive == true) return START_NOT_STICKY
         job = scope.launch {
             try {
-                withTimeoutOrNull(3 * 60_000) { run(force) }
+                withTimeoutOrNull(5 * 60_000) { run(force) } // 三天、每天最多 8 個行程，唸完約 2～3 分鐘
             } catch (e: Exception) {
                 Log.w("DailyBrief", "朗讀失敗：${e.message}")
             } finally {
@@ -126,17 +132,20 @@ class DailyBriefService : Service() {
     private suspend fun run(force: Boolean) {
         val s = Graph.settings
         val today = LocalDate.now()
-        val tomorrow = today.plusDays(1)
-        if (!force && DailyBrief.skipFor(tomorrow, s.briefWeekend)) return
+        // 「現在唸一次」不管週末設定，方便試聽
+        val dates = DailyBrief.dates(today, s.briefStart, s.briefDays, s.briefWeekend || force)
+        if (dates.isEmpty()) return
         if (!CalendarReader.hasPermission(this)) {
-            post("沒辦法唸明天的行程", "語音總控還沒有讀取行事曆的權限。點這裡打開設定，到「明天行程提醒」按「允許」。")
+            post("沒辦法唸行程", "語音總控還沒有讀取行事曆的權限。點這裡打開設定，到「每日行程提醒」按「允許」。")
             return
         }
         val brief = withContext(Dispatchers.IO) {
-            CalendarBrief.compose(tomorrow, today, CalendarReader.events(this@DailyBriefService, tomorrow, s.briefExcluded))
+            CalendarBrief.composeDays(today, dates.map { it to CalendarReader.events(this@DailyBriefService, it, s.briefExcluded) })
         }
         if (brief.count == 0 && !s.briefWhenEmpty && !force) return
-        val title = "明天${CalendarBrief.dateWord(tomorrow)}：" + if (brief.count == 0) "沒有行程" else "${brief.count} 個行程"
+        val head = if (dates.size == 1) "${CalendarBrief.dayWord(dates[0], today)}${CalendarBrief.dateWord(dates[0])}".trim()
+        else dates.joinToString("、") { CalendarBrief.dayWord(it, today).ifEmpty { CalendarBrief.shortDate(it) } }
+        val title = "$head：" + if (brief.count == 0) "沒有行程" else "${brief.count} 個行程"
         post(title, brief.lines.joinToString("\n").ifEmpty { "沒有行程" })
 
         val audio = getSystemService(AudioManager::class.java)
@@ -161,7 +170,7 @@ class DailyBriefService : Service() {
     private fun channels() {
         val nm = getSystemService(NotificationManager::class.java)
         nm.createNotificationChannel(NotificationChannel(CH_ONGOING, "正在唸行程", NotificationManager.IMPORTANCE_LOW).apply { setShowBadge(false) })
-        nm.createNotificationChannel(NotificationChannel(CH_RESULT, "明天行程", NotificationManager.IMPORTANCE_DEFAULT))
+        nm.createNotificationChannel(NotificationChannel(CH_RESULT, "每日行程",NotificationManager.IMPORTANCE_DEFAULT))
     }
 
     private fun ongoing(): Notification {
@@ -171,7 +180,7 @@ class DailyBriefService : Service() {
         )
         return Notification.Builder(this, CH_ONGOING)
             .setSmallIcon(R.drawable.ic_tile)
-            .setContentTitle("正在唸明天的行程")
+            .setContentTitle("正在唸行程")
             .addAction(Notification.Action.Builder(null, "停止", stop).build())
             .setOngoing(true)
             .build()

@@ -51,7 +51,7 @@ class App : Application() {
     override fun onCreate() {
         super.onCreate()
         Graph.init(this)
-        // 每次 APP 啟動都重排一次明天行程提醒（ColorOS 可能清掉排程）
+        // 每次 APP 啟動都重排一次每日行程提醒（ColorOS 可能清掉排程）
         runCatching { tw.hoonsor.voicehub.calendar.DailyBrief.sync(this) }
         // 每日自動備份（開著才排，已排好不重排）
         runCatching { tw.hoonsor.backup.AutoBackup.ensureScheduled(this) }

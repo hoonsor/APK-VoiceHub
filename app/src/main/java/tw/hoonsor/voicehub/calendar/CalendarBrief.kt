@@ -38,6 +38,17 @@ object CalendarBrief {
         return Brief(spoken, list.map { lineItem(date, it) }, list.size)
     }
 
+    /** 連續幾天合成一段：每天各唸一段（沒行程的那天說「…沒有行程」），通知每天加一行日期標題 */
+    fun composeDays(today: LocalDate, days: List<Pair<LocalDate, List<CalEvent>>>): Brief {
+        val parts = days.map { (d, events) -> d to compose(d, today, events) }
+        if (parts.size == 1) return parts.first().second
+        return Brief(
+            parts.joinToString(" ") { it.second.spoken },
+            parts.flatMap { (d, b) -> listOf("【${"${dayWord(d, today)} ${shortDate(d)}".trim()}】") + b.lines.ifEmpty { listOf("沒有行程") } },
+            parts.sumOf { it.second.count },
+        )
+    }
+
     /** 去掉重複（同一個活動出現在好幾個共享行事曆）、只留這一天的、整天的排前面 */
     fun clean(date: LocalDate, events: List<CalEvent>): List<CalEvent> {
         val dayStart = date.atStartOfDay()
@@ -104,14 +115,20 @@ object CalendarBrief {
     fun spokenRange(a: LocalTime, b: LocalTime): String =
         if (period(a.hour) != period(b.hour)) spokenTime(a) + "到" + spokenTime(b) else spokenTime(a) + "到 " + spokenTime(b, withPeriod = false)
 
-    fun dayWord(date: LocalDate, today: LocalDate): String = when (date.toEpochDay() - today.toEpochDay()) {
-        0L -> "今天"
-        1L -> "明天"
-        2L -> "後天"
+    fun dayWord(date: LocalDate, today: LocalDate): String = offsetWord((date.toEpochDay() - today.toEpochDay()).toInt())
+
+    fun offsetWord(offset: Int): String = when (offset) {
+        0 -> "今天"
+        1 -> "明天"
+        2 -> "後天"
+        3 -> "大後天"
         else -> ""
     }
 
     fun dateWord(date: LocalDate): String = " ${date.monthValue} 月 ${date.dayOfMonth} 日${weekday(date.dayOfWeek)}"
+
+    /** 通知用的短日期：「11/28（六）」 */
+    fun shortDate(date: LocalDate): String = "${date.monthValue}/${date.dayOfMonth}（${"一二三四五六日"[date.dayOfWeek.value - 1]}）"
 
     fun weekday(d: DayOfWeek) = "星期" + "一二三四五六日"[d.value - 1]
 }

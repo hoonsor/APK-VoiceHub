@@ -116,11 +116,15 @@ class CalendarBriefTest {
     @Test fun weatherCalls() {
         fun names(dates: List<LocalDate>) = DailyBrief.weatherCalls(today, dates).map { it.first }
         assertEquals(listOf("weather_tomorrow"), names(listOf(tomorrow))) // 預設：晚上唸明天
-        assertEquals(listOf("weather_now", "weather_tomorrow"), names(listOf(today, tomorrow))) // 早上唸今天＋明天
-        assertEquals(listOf("weather_now"), names(listOf(today)))
+        assertEquals(listOf("weather_today", "weather_tomorrow"), names(listOf(today, tomorrow))) // 早上唸今天＋明天
+        assertEquals(listOf("weather_today"), names(listOf(today)))
         assertEquals(emptyList<String>(), names(listOf(today.plusDays(2)))) // 後天以後沒有單日播報
         assertEquals("auto", DailyBrief.weatherCalls(today, listOf(tomorrow)).single().second.getString("place"))
-        assertEquals("current", DailyBrief.weatherCalls(today, listOf(today)).single().second.getString("place"))
+        assertEquals("auto", DailyBrief.weatherCalls(today, listOf(today)).single().second.getString("place"))
+        // 舊版天氣 APP 沒有 weather_today → 退回 weather_now（目前位置）
+        assertEquals("weather_now", DailyBrief.weatherFallback("weather_today")?.first)
+        assertEquals("current", DailyBrief.weatherFallback("weather_today")?.second?.getString("place"))
+        assertEquals(null, DailyBrief.weatherFallback("weather_tomorrow"))
     }
 
     @Test fun composeSeveralDays() {

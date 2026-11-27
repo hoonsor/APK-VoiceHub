@@ -104,7 +104,7 @@ fun DailyBriefCard() {
         ToggleRow("沒有行程也唸", "關掉時，要唸的日子都沒有行程就不唸行程（有開天氣就只唸天氣）", empty) { empty = it; s.briefWhenEmpty = it }
         ToggleRow(
             "一起唸天氣",
-            "行程唸完接著唸倬的天氣的播報：唸到今天時唸現在到接下來幾小時，唸到明天時唸明天天氣（明天上班查學校、其他查家）。天氣 APP 沒回應就只唸行程",
+            "行程唸完接著唸倬的天氣的播報：唸到今天時唸今天從現在到晚上、唸到明天時唸明天天氣（上班日查學校、其他查家）。天氣 APP 沒回應就只唸行程",
             weatherOn,
         ) { weatherOn = it; s.briefWeather = it }
         if (weatherOn && !weatherApp) Text("手機上沒有倬的天氣，不會唸天氣。", color = C.warn, style = MaterialTheme.typography.bodyMedium)

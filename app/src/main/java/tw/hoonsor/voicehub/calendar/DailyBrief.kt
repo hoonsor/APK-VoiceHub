@@ -57,12 +57,18 @@ object DailyBrief {
     const val WEATHER_PKG = "tw.hoonsor.weather"
 
     /**
-     * 要跟天氣 APP 要哪些播報（純邏輯，有測試）：唸到今天 → weather_now（目前位置，現在到接下來幾小時）；
+     * 要跟天氣 APP 要哪些播報（純邏輯，有測試）：唸到今天 → weather_today（現在到晚上，place=auto：今天上班查學校、其他查家）；
      * 唸到明天 → weather_tomorrow（place=auto：明天上班查學校、其他查家）。後天以後天氣 APP 沒有單日播報，不唸。
      */
     fun weatherCalls(today: LocalDate, dates: List<LocalDate>): List<Pair<String, JSONObject>> = buildList {
-        if (today in dates) add("weather_now" to JSONObject().put("place", "current"))
+        if (today in dates) add("weather_today" to JSONObject().put("place", "auto"))
         if (today.plusDays(1) in dates) add("weather_tomorrow" to JSONObject().put("place", "auto"))
+    }
+
+    /** 天氣 APP v0.8.0 以前沒有 weather_today：退回 weather_now（目前位置，現在到接下來幾小時） */
+    fun weatherFallback(action: String): Pair<String, JSONObject>? = when (action) {
+        "weather_today" -> "weather_now" to JSONObject().put("place", "current")
+        else -> null
     }
 
     /** 手機上有沒有倬的天氣（正式版或 LAB 版） */
@@ -191,8 +197,9 @@ class DailyBriefService : Service() {
         val calls = DailyBrief.weatherCalls(today, dates)
         if (calls.isEmpty()) return emptyList()
         // 定時觸發時 APP 可能剛被叫起來，還沒掃描過其他 APP
-        if (registry.resolve(DailyBrief.WEATHER_PKG, calls.first().first)?.builtin != false) runCatching { registry.refresh() }
-        return calls.mapNotNull { (action, params) ->
+        if (registry.resolve(DailyBrief.WEATHER_PKG, "weather_tomorrow")?.builtin != false) runCatching { registry.refresh() }
+        return calls.mapNotNull { call ->
+            val (action, params) = if (registry.resolve(DailyBrief.WEATHER_PKG, call.first) == null) DailyBrief.weatherFallback(call.first) ?: call else call
             val r = runCatching { registry.execute(DailyBrief.WEATHER_PKG, action, params) }.getOrNull()
             if (r?.ok == true) r.summary.trim().takeIf { it.isNotEmpty() }
             else { Log.w("DailyBrief", "天氣 $action 失敗：${r?.errorMessage}"); null }

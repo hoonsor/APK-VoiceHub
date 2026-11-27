@@ -144,7 +144,7 @@ private fun ShareSheet(
                 if (link != null) {
                     if (title.isNotBlank()) Text(title, color = C.text, style = MaterialTheme.typography.bodyLarge)
                     Text(link, color = C.muted, style = MaterialTheme.typography.bodyMedium, maxLines = 2)
-                    if (ShareText.isYouTube(link)) Text("只會抓標題、說明、字幕和縮圖，不下載影片。", color = C.muted, style = MaterialTheme.typography.bodyMedium)
+                    if (ShareText.isYouTube(link)) Text("會在你的電腦下載影片來分析畫面與剪輯節奏，只存在電腦、不公開。", color = C.muted, style = MaterialTheme.typography.bodyMedium)
                 } else {
                     Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         uris.forEach { Thumb(it) }
